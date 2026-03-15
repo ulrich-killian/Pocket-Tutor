@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useAuth } from '../hooks/useAuth';
 import { AuthError } from '../services/authService';
 
@@ -22,11 +23,21 @@ interface LoginScreenProps {
 
 export default function LoginScreen({ navigation }: LoginScreenProps) {
   const { signIn, loading } = useAuth();
+  const router = useRouter();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(0);
+
+  // Cooldown timer effect
+  useEffect(() => {
+    if (cooldown > 0) {
+      const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [cooldown]);
 
   const handleLogin = async () => {
     // Validate inputs
@@ -47,12 +58,33 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       return;
     }
 
+    // Check if on cooldown
+    if (cooldown > 0) {
+      setError(`Please wait ${cooldown} second(s) before trying again`);
+      return;
+    }
+
     setError(null);
 
     try {
       await signIn(email.trim(), password);
-      // Navigation will be handled by the app's routing
+      // Navigate to dashboard after successful login
+      router.replace('/dashboard');
     } catch (err) {
+      // Handle rate limiting (429 error) or specific rate limit error code
+      if (
+        err instanceof AuthError &&
+        (err.statusCode === 429 || err.code === 'over_email_send_rate_limit')
+      ) {
+        setCooldown(60); // 60 second cooldown
+        const errorMessage =
+          err.code === 'over_email_send_rate_limit'
+            ? 'Email rate limit exceeded. Please wait 60 seconds before trying again.'
+            : 'Too many requests. Please wait 60 seconds before trying again.';
+        setError(errorMessage);
+        return;
+      }
+
       if (err instanceof AuthError) {
         setError(err.message);
       } else if (err instanceof Error) {
@@ -158,12 +190,17 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
           {/* Login Button */}
           <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
+            style={[
+              styles.button,
+              (loading || cooldown > 0) && styles.buttonDisabled,
+            ]}
             onPress={handleLogin}
-            disabled={loading}
+            disabled={loading || cooldown > 0}
           >
             {loading ? (
               <ActivityIndicator color="#FFFFFF" />
+            ) : cooldown > 0 ? (
+              <Text style={styles.buttonText}>Wait {cooldown}s</Text>
             ) : (
               <Text style={styles.buttonText}>Sign In</Text>
             )}
@@ -172,7 +209,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           {/* Sign Up Link */}
           <View style={styles.signUpContainer}>
             <Text style={styles.signUpText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => navigation?.navigate('Signup')}>
+            <TouchableOpacity onPress={() => router.push('/(auth)/signup')}>
               <Text style={styles.signUpLink}>Sign Up</Text>
             </TouchableOpacity>
           </View>

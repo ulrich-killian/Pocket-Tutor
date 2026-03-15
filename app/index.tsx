@@ -19,7 +19,7 @@ export default function LandingPage() {
 
   // If already authenticated, redirect to protected area
   if (initialized && isAuthenticated) {
-    router.replace('/(protected)');
+    router.replace('/dashboard');
     return null;
   }
 
@@ -67,7 +67,7 @@ export default function LandingPage() {
             </Text>
             <TouchableOpacity
               style={styles.primaryButton}
-              onPress={() => router.push('/login')}
+              onPress={() => router.push('/(auth)/login')}
               activeOpacity={0.85}
             >
               <Text style={styles.primaryButtonText}>Get Started Free</Text>
@@ -116,7 +116,7 @@ export default function LandingPage() {
           <Text style={styles.ctaTitle}>Ready to Start Learning?</Text>
           <TouchableOpacity
             style={styles.secondaryButton}
-            onPress={() => router.push('/login')}
+            onPress={() => router.push('/(auth)/login')}
             activeOpacity={0.8}
           >
             <Text style={styles.secondaryButtonText}>Get Started Now</Text>
@@ -124,7 +124,7 @@ export default function LandingPage() {
 
           <View style={styles.secondaryRow}>
             <Text style={styles.secondaryText}>Already have an account?</Text>
-            <TouchableOpacity onPress={() => router.push('/login')}>
+            <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
               <Text style={styles.secondaryLink}>Sign In</Text>
             </TouchableOpacity>
           </View>

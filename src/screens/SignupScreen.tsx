@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useAuth } from '../hooks/useAuth';
 import { AuthError } from '../services/authService';
 
@@ -23,6 +24,7 @@ interface SignupScreenProps {
 
 export default function SignupScreen({ navigation }: SignupScreenProps) {
   const { signUp, loading } = useAuth();
+  const router = useRouter();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,6 +33,15 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  // Cooldown timer effect
+  useEffect(() => {
+    if (cooldown > 0) {
+      const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [cooldown]);
 
   const validatePassword = (): boolean => {
     if (password.length < 8) {
@@ -88,22 +99,34 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
       return;
     }
 
+    // Check if on cooldown
+    if (cooldown > 0) {
+      setError(`Please wait ${cooldown} second(s) before trying again`);
+      return;
+    }
+
     setError(null);
 
     try {
       await signUp(email.trim(), password);
 
-      Alert.alert(
-        'Verification Email Sent',
-        'Please check your email to verify your account before signing in.',
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation?.goBack(),
-          },
-        ],
-      );
+      // Navigate to dashboard after successful signup
+      router.replace('/dashboard');
     } catch (err) {
+      // Handle rate limiting (429 error) or specific rate limit error code
+      if (
+        err instanceof AuthError &&
+        (err.statusCode === 429 || err.code === 'over_email_send_rate_limit')
+      ) {
+        setCooldown(60); // 60 second cooldown
+        const errorMessage =
+          err.code === 'over_email_send_rate_limit'
+            ? 'Email rate limit exceeded. Please wait 60 seconds before trying again.'
+            : 'Too many requests. Please wait 60 seconds before trying again.';
+        setError(errorMessage);
+        return;
+      }
+
       if (err instanceof AuthError) {
         setError(err.message);
       } else if (err instanceof Error) {
@@ -222,12 +245,17 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
 
           {/* Sign Up Button */}
           <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
+            style={[
+              styles.button,
+              (loading || cooldown > 0) && styles.buttonDisabled,
+            ]}
             onPress={handleSignUp}
-            disabled={loading}
+            disabled={loading || cooldown > 0}
           >
             {loading ? (
               <ActivityIndicator color="#FFFFFF" />
+            ) : cooldown > 0 ? (
+              <Text style={styles.buttonText}>Wait {cooldown}s</Text>
             ) : (
               <Text style={styles.buttonText}>Create Account</Text>
             )}

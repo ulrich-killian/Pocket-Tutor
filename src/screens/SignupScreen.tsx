@@ -103,8 +103,20 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
 
     try {
       await signUp(email.trim(), password);
-      // Show success message - user needs to confirm email
-      router.replace('/(protected)/onboarding' as any);
+      // Show alert to notify user about confirmation email
+      Alert.alert(
+        'Confirmation Email Sent',
+        `We've sent a confirmation link to ${email}. Please check your inbox and click the link to verify your account.`,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              // Navigate to onboarding after user acknowledges
+              router.replace('/(onboarding)/onboarding' as any);
+            },
+          },
+        ],
+      );
     } catch (err) {
       if (
         err instanceof AuthError &&

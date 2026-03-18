@@ -64,7 +64,7 @@ class AuthService {
         email: params.email,
         password: params.password,
         options: {
-          emailRedirectTo: 'pockettutor://onboarding',
+          emailRedirectTo: 'https://pockettutor.app/onboarding',
           ...params.options,
         },
       });

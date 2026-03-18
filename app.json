@@ -10,7 +10,8 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.pockettutor.app"
+      "bundleIdentifier": "com.pockettutor.app",
+      "scheme": "pockettutor"
     },
     "android": {
       "package": "com.pockettutor.app",

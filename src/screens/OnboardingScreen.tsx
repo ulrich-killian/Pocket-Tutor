@@ -37,7 +37,7 @@ export default function OnboardingScreen({
   const [learningStyle, setLearningStyle] = useState<string>('');
 
   // Category options
-  const categoryOptions = ['OL', 'A/L', 'HND', 'BSc', 'Others'];
+  const categoryOptions = ['O/Level', 'A/Level', 'HND', 'BSc', 'Others'];
 
   // Topic options
   const topicOptions = [
@@ -94,7 +94,7 @@ export default function OnboardingScreen({
     });
 
     // Navigate to dashboard
-    router.replace('/dashboard');
+    router.replace('/(protected)/dashboard');
   };
 
   const isFormComplete = category && topic && studyHours && learningStyle;

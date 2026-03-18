@@ -34,6 +34,7 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
   const [error, setError] = useState<string | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [signupSuccess, setSignupSuccess] = useState(false);
 
   // Cooldown timer effect
   useEffect(() => {
@@ -102,7 +103,8 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
 
     try {
       await signUp(email.trim(), password);
-      router.replace('/dashboard');
+      // Show success message - user needs to confirm email
+      router.replace('/(protected)/onboarding' as any);
     } catch (err) {
       if (
         err instanceof AuthError &&
@@ -126,6 +128,71 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
       }
     }
   };
+
+  // If signup was successful, show confirmation screen
+  if (signupSuccess) {
+    return (
+      <View style={styles.container}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Logo */}
+          <View style={styles.logoContainer}>
+            <View style={styles.logoCircle}>
+              <Text style={styles.logoText}>PT</Text>
+            </View>
+          </View>
+
+          {/* Success Message */}
+          <View style={styles.header}>
+            <View style={styles.successIcon}>
+              <Text style={styles.successIconText}>✓</Text>
+            </View>
+            <Text style={styles.title}>Check Your Email</Text>
+            <Text style={styles.subtitle}>
+              We've sent a confirmation link to{'\n'}
+              <Text style={styles.emailText}>{email}</Text>
+            </Text>
+          </View>
+
+          {/* Instructions */}
+          <View style={styles.instructionsCard}>
+            <Text style={styles.instructionsTitle}>Next Steps:</Text>
+            <Text style={styles.instructionsText}>
+              1. Open the email and click the confirmation link{'\n'}
+              2. You'll be redirected to set up your profile{'\n'}
+              3. Start your learning journey!
+            </Text>
+          </View>
+
+          {/* Resend Button */}
+          <TouchableOpacity
+            style={styles.resendButton}
+            onPress={() => {
+              setSignupSuccess(false);
+              handleSignUp();
+            }}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#1E3A8A" />
+            ) : (
+              <Text style={styles.resendButtonText}>Resend Email</Text>
+            )}
+          </TouchableOpacity>
+
+          {/* Back to Login */}
+          <View style={styles.signInContainer}>
+            <Text style={styles.signInText}>Already verified? </Text>
+            <TouchableOpacity onPress={() => navigation?.goBack()}>
+              <Text style={styles.signInLink}>Sign In</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -289,7 +356,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 100,
+    paddingTop: 60,
     paddingBottom: 40,
   },
   logoContainer: {
@@ -327,6 +394,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 15,
     color: '#6B7280',
+    textAlign: 'center',
   },
   form: {},
   inputContainer: {
@@ -471,6 +539,55 @@ const styles = StyleSheet.create({
   signInLink: {
     fontSize: 14,
     color: '#1E3A8A',
+    fontWeight: '600',
+  },
+  // Success screen styles
+  successIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#10B981',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  successIconText: {
+    fontSize: 40,
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+  emailText: {
+    color: '#1E3A8A',
+    fontWeight: '600',
+  },
+  instructionsCard: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 32,
+  },
+  instructionsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 12,
+  },
+  instructionsText: {
+    fontSize: 14,
+    color: '#6B7280',
+    lineHeight: 24,
+  },
+  resendButton: {
+    borderWidth: 2,
+    borderColor: '#1E3A8A',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  resendButtonText: {
+    color: '#1E3A8A',
+    fontSize: 16,
     fontWeight: '600',
   },
 });

@@ -63,7 +63,10 @@ class AuthService {
       const { data, error } = await supabase.auth.signUp({
         email: params.email,
         password: params.password,
-        options: params.options,
+        options: {
+          emailRedirectTo: 'pockettutor://onboarding',
+          ...params.options,
+        },
       });
 
       if (error) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,9 +8,6 @@ import {
   ScrollView,
   Platform,
   Alert,
-  FlatList,
-  RefreshControl,
-  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,16 +16,10 @@ import * as FileSystem from 'expo-file-system/legacy';
 import ProcessingScreen, {
   ProcessingStep,
 } from '../../components/ProcessingScreen';
-import DocumentCard from '../../components/DocumentCard';
-import {
-  documentService,
-  Document,
-  DocumentError,
-} from '../../src/services/documentService';
+import { documentService } from '../../src/services/documentService';
 import { supabase } from '../../src/lib/supabase';
 
 type FileType = 'pdf' | 'docx' | 'txt';
-type ScreenView = 'upload' | 'list' | 'processing';
 
 interface SelectedFile {
   uri: string;
@@ -64,59 +55,15 @@ const getMimeTypeForFileType = (fileType?: FileType): string[] => {
   }
 };
 
-export default function DocumentsScreen() {
+export default function UploadScreen() {
   const router = useRouter();
-  const [currentView, setCurrentView] = useState<ScreenView>('upload');
   const [selectedType, setSelectedType] = useState<FileType | null>(null);
   const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null);
   const [subject, setSubject] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
   const [processingStep, setProcessingStep] =
     useState<ProcessingStep>('uploading');
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
-
-  // Document list state
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
-
-  // Get current user
-  useEffect(() => {
-    const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        setUserId(user.id);
-      }
-    };
-    getUser();
-  }, []);
-
-  // Fetch documents
-  const fetchDocuments = useCallback(async () => {
-    if (!userId) return;
-
-    setLoading(true);
-    try {
-      const docs = await documentService.getUserDocuments(userId);
-      setDocuments(docs);
-    } catch (error) {
-      console.error('Error fetching documents:', error);
-      if (error instanceof DocumentError) {
-        Alert.alert('Error', error.message);
-      }
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [userId]);
-
-  useEffect(() => {
-    if (userId) {
-      fetchDocuments();
-    }
-  }, [userId, fetchDocuments]);
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 B';
@@ -126,9 +73,11 @@ export default function DocumentsScreen() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
-  const handleSelectFile = async () => {
+  const handleSelectFile = async (fileType?: FileType) => {
     try {
-      const mimeTypes = getMimeTypeForFileType(selectedType || undefined);
+      const mimeTypes = getMimeTypeForFileType(
+        fileType || selectedType || undefined,
+      );
 
       const result = await DocumentPicker.getDocumentAsync({
         type: mimeTypes,
@@ -163,12 +112,17 @@ export default function DocumentsScreen() {
     if (!selectedFile) return;
 
     try {
-      if (!userId) {
+      // Get current user
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
         Alert.alert('Error', 'Please sign in to upload documents');
         return;
       }
 
-      setCurrentView('processing');
+      setIsProcessing(true);
       setProcessingStep('uploading');
       setErrorMessage(undefined);
 
@@ -190,7 +144,7 @@ export default function DocumentsScreen() {
 
       // Upload document
       await documentService.uploadDocument(
-        userId,
+        user.id,
         arrayBuffer,
         selectedFile.name,
         selectedFile.type,
@@ -218,55 +172,17 @@ export default function DocumentsScreen() {
   };
 
   const handleProcessingComplete = () => {
-    // Reset and show list
-    setSelectedFile(null);
-    setSubject('');
-    setSelectedType(null);
-    setCurrentView('list');
-    fetchDocuments();
+    router.replace('/(protected)/documents');
   };
 
   const handleProcessingClose = () => {
-    setCurrentView('upload');
+    setIsProcessing(false);
     setProcessingStep('uploading');
     setErrorMessage(undefined);
   };
 
-  const handleReset = () => {
-    setSelectedFile(null);
-    setSubject('');
-    setSelectedType(null);
-  };
-
-  const handleDelete = async (document: Document) => {
-    try {
-      await documentService.deleteDocument(document.path);
-      setDocuments((prev) => prev.filter((doc) => doc.id !== document.id));
-      Alert.alert('Deleted', `"${document.name}" has been deleted.`);
-    } catch (error) {
-      console.error('Error deleting document:', error);
-      Alert.alert(
-        'Delete Failed',
-        error instanceof Error ? error.message : 'Failed to delete document',
-      );
-    }
-  };
-
-  const handleDocumentPress = (document: Document) => {
-    Alert.alert(
-      document.name,
-      `Type: ${document.type}\nSize: ${documentService.formatFileSize(document.size)}`,
-      [{ text: 'Close', style: 'cancel' }],
-    );
-  };
-
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    fetchDocuments();
-  }, [fetchDocuments]);
-
-  // Processing Screen
-  if (currentView === 'processing') {
+  // Show processing screen when uploading
+  if (isProcessing) {
     return (
       <ProcessingScreen
         fileName={selectedFile?.name || 'Document'}
@@ -278,68 +194,6 @@ export default function DocumentsScreen() {
     );
   }
 
-  // Document List View
-  if (currentView === 'list') {
-    return (
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.listHeader}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => setCurrentView('upload')}
-          >
-            <Ionicons name="arrow-back" size={24} color="#1F2937" />
-          </TouchableOpacity>
-          <Text style={styles.listHeaderTitle}>My Documents</Text>
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => setCurrentView('upload')}
-          >
-            <Ionicons name="add" size={24} color="#1E3A8A" />
-          </TouchableOpacity>
-        </View>
-
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#1E3A8A" />
-          </View>
-        ) : documents.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Ionicons name="folder-open-outline" size={64} color="#D1D5DB" />
-            <Text style={styles.emptyText}>No documents yet</Text>
-            <TouchableOpacity
-              style={styles.emptyButton}
-              onPress={() => setCurrentView('upload')}
-            >
-              <Text style={styles.emptyButtonText}>Upload your first file</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <FlatList
-            data={documents}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <DocumentCard
-                document={item}
-                onDelete={handleDelete}
-                onPress={handleDocumentPress}
-              />
-            )}
-            contentContainerStyle={styles.listContent}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                colors={['#1E3A8A']}
-              />
-            }
-          />
-        )}
-      </View>
-    );
-  }
-
-  // Upload View (Default)
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -348,15 +202,10 @@ export default function DocumentsScreen() {
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+          <Ionicons name="arrow-back" size={24} color="#1F2937" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Pocket Tutor</Text>
-        <TouchableOpacity
-          style={styles.listButton}
-          onPress={() => setCurrentView('list')}
-        >
-          <Ionicons name="folder-outline" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
+        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView
@@ -401,7 +250,7 @@ export default function DocumentsScreen() {
         {/* Upload Area */}
         <TouchableOpacity
           style={[styles.uploadArea, selectedFile && styles.uploadAreaWithFile]}
-          onPress={handleSelectFile}
+          onPress={() => handleSelectFile()}
           activeOpacity={0.7}
         >
           {selectedFile ? (
@@ -417,7 +266,7 @@ export default function DocumentsScreen() {
               </Text>
               <TouchableOpacity
                 style={styles.changeFileButton}
-                onPress={handleSelectFile}
+                onPress={() => handleSelectFile()}
               >
                 <Text style={styles.changeFileText}>Change file</Text>
               </TouchableOpacity>
@@ -477,7 +326,14 @@ export default function DocumentsScreen() {
         >
           <Ionicons name="close-circle-outline" size={28} color="#6B7280" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionIconButton} onPress={handleReset}>
+        <TouchableOpacity
+          style={styles.actionIconButton}
+          onPress={() => {
+            setSelectedFile(null);
+            setSubject('');
+            setSelectedType(null);
+          }}
+        >
           <Ionicons name="refresh-circle-outline" size={28} color="#6B7280" />
         </TouchableOpacity>
       </View>
@@ -496,7 +352,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingBottom: 16,
+    paddingBottom: 8,
     backgroundColor: '#1E3A8A',
   },
   backButton: {
@@ -510,11 +366,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
   },
-  listButton: {
+  headerSpacer: {
     width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   scrollView: {
     flex: 1,
@@ -700,60 +553,5 @@ const styles = StyleSheet.create({
   },
   actionIconButton: {
     padding: 8,
-  },
-  // List View Styles
-  listHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingBottom: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  listHeaderTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  addButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#EEF2FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  listContent: {
-    padding: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#9CA3AF',
-    marginTop: 16,
-    marginBottom: 24,
-  },
-  emptyButton: {
-    backgroundColor: '#1E3A8A',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  emptyButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
   },
 });

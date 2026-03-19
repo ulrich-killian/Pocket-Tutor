@@ -100,17 +100,14 @@ export default function SplashScreen() {
         </View>
       </Animated.View>
 
-      {/* Title */}
       <Animated.View style={titleAnimatedStyle}>
         <Text style={styles.title}>Pocket Tutor</Text>
       </Animated.View>
 
-      {/* Subtitle */}
       <Animated.View style={subtitleAnimatedStyle}>
         <Text style={styles.subtitle}>Your AI-Powered Learning Companion</Text>
       </Animated.View>
 
-      {/* Loading Section */}
       <Animated.View style={[styles.loadingWrapper, loadingAnimatedStyle]}>
         <Text style={styles.loadingText}>Loading...</Text>
         <View style={styles.progressBarBg}>

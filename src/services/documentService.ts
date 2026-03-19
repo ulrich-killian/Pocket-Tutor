@@ -1,5 +1,8 @@
 import { supabase } from '../lib/supabase';
 
+// Status types
+export type DocumentStatus = 'uploading' | 'processing' | 'ready' | 'error';
+
 // Type definitions for document operations
 export interface Document {
   id: string;
@@ -8,6 +11,7 @@ export interface Document {
   size: number;
   type: string;
   publicUrl: string;
+  status?: DocumentStatus;
   createdAt: string;
   updatedAt: string;
 }
@@ -40,7 +44,7 @@ export class DocumentError extends Error {
  * Handles document listing, retrieval, and deletion from Supabase Storage
  */
 class DocumentService {
-  private bucket = 'uploads';
+  private bucket = process.env.EXPO_PUBLIC_STORAGE_BUCKET || 'uploads';
 
   /**
    * Get file type from filename

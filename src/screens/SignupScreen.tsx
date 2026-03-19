@@ -34,6 +34,7 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
   const [error, setError] = useState<string | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [signupSuccess, setSignupSuccess] = useState(false);
 
   // Cooldown timer effect
   useEffect(() => {
@@ -49,7 +50,6 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
       return false;
     }
 
-    // Check for at least one number
     if (!/\d/.test(password)) {
       setError('Password must contain at least one number');
       return false;
@@ -59,7 +59,6 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
   };
 
   const handleSignUp = async () => {
-    // Validate inputs
     if (!email.trim()) {
       setError('Please enter your email address');
       return;
@@ -75,31 +74,26 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
       return;
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError('Please enter a valid email address');
       return;
     }
 
-    // Validate password
     if (!validatePassword()) {
       return;
     }
 
-    // Check if passwords match
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
 
-    // Check terms agreement
     if (!agreedToTerms) {
       setError('Please agree to the Terms of Service and Privacy Policy');
       return;
     }
 
-    // Check if on cooldown
     if (cooldown > 0) {
       setError(`Please wait ${cooldown} second(s) before trying again`);
       return;
@@ -109,20 +103,30 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
 
     try {
       await signUp(email.trim(), password);
-
-      // Navigate to dashboard after successful signup
-      router.replace('/dashboard');
+      // Show alert to notify user about confirmation email
+      Alert.alert(
+        'Confirmation Email Sent',
+        `We've sent a confirmation link to ${email}. Please check your inbox and click the link to verify your account.`,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              // Navigate to onboarding after user acknowledges
+              router.replace('/(onboarding)/onboarding' as any);
+            },
+          },
+        ],
+      );
     } catch (err) {
-      // Handle rate limiting (429 error) or specific rate limit error code
       if (
         err instanceof AuthError &&
         (err.statusCode === 429 || err.code === 'over_email_send_rate_limit')
       ) {
-        setCooldown(60); // 60 second cooldown
+        setCooldown(60);
         const errorMessage =
           err.code === 'over_email_send_rate_limit'
-            ? 'Email rate limit exceeded. Please wait 60 seconds before trying again.'
-            : 'Too many requests. Please wait 60 seconds before trying again.';
+            ? 'Email rate limit exceeded. Please wait 60 seconds.'
+            : 'Too many requests. Please wait 60 seconds.';
         setError(errorMessage);
         return;
       }
@@ -137,6 +141,71 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
     }
   };
 
+  // If signup was successful, show confirmation screen
+  if (signupSuccess) {
+    return (
+      <View style={styles.container}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Logo */}
+          <View style={styles.logoContainer}>
+            <View style={styles.logoCircle}>
+              <Text style={styles.logoText}>PT</Text>
+            </View>
+          </View>
+
+          {/* Success Message */}
+          <View style={styles.header}>
+            <View style={styles.successIcon}>
+              <Text style={styles.successIconText}>✓</Text>
+            </View>
+            <Text style={styles.title}>Check Your Email</Text>
+            <Text style={styles.subtitle}>
+              We've sent a confirmation link to{'\n'}
+              <Text style={styles.emailText}>{email}</Text>
+            </Text>
+          </View>
+
+          {/* Instructions */}
+          <View style={styles.instructionsCard}>
+            <Text style={styles.instructionsTitle}>Next Steps:</Text>
+            <Text style={styles.instructionsText}>
+              1. Open the email and click the confirmation link{'\n'}
+              2. You'll be redirected to set up your profile{'\n'}
+              3. Start your learning journey!
+            </Text>
+          </View>
+
+          {/* Resend Button */}
+          <TouchableOpacity
+            style={styles.resendButton}
+            onPress={() => {
+              setSignupSuccess(false);
+              handleSignUp();
+            }}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#1E3A8A" />
+            ) : (
+              <Text style={styles.resendButtonText}>Resend Email</Text>
+            )}
+          </TouchableOpacity>
+
+          {/* Back to Login */}
+          <View style={styles.signInContainer}>
+            <Text style={styles.signInText}>Already verified? </Text>
+            <TouchableOpacity onPress={() => navigation?.goBack()}>
+              <Text style={styles.signInLink}>Sign In</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -145,12 +214,22 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
+        {/* Logo */}
+        <View style={styles.logoContainer}>
+          <View style={styles.logoCircle}>
+            <Text style={styles.logoText}>PT</Text>
+          </View>
+        </View>
+
+        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Create Account</Text>
           <Text style={styles.subtitle}>Start your learning journey today</Text>
         </View>
 
+        {/* Form */}
         <View style={styles.form}>
           {/* Email Input */}
           <View style={styles.inputContainer}>
@@ -261,6 +340,13 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
             )}
           </TouchableOpacity>
 
+          {/* Divider */}
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
           {/* Sign In Link */}
           <View style={styles.signInContainer}>
             <Text style={styles.signInText}>Already have an account? </Text>
@@ -285,24 +371,46 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 40,
   },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  logoCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#1E3A8A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  logoText: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
   header: {
-    marginBottom: 32,
+    alignItems: 'center',
+    marginBottom: 28,
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
+    fontSize: 28,
+    fontWeight: '700',
     color: '#1F2937',
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 15,
     color: '#6B7280',
+    textAlign: 'center',
   },
-  form: {
-    flex: 1,
-  },
+  form: {},
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: 18,
   },
   label: {
     fontSize: 14,
@@ -312,8 +420,8 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
@@ -324,8 +432,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
     backgroundColor: '#F9FAFB',
   },
   passwordInput: {
@@ -341,32 +449,32 @@ const styles = StyleSheet.create({
   },
   togglePasswordText: {
     fontSize: 14,
-    color: '#4F46E5',
+    color: '#1E3A8A',
     fontWeight: '600',
   },
   passwordHint: {
     fontSize: 12,
     color: '#6B7280',
-    marginTop: 4,
+    marginTop: 6,
   },
   termsContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   checkbox: {
-    width: 20,
-    height: 20,
+    width: 22,
+    height: 22,
     borderWidth: 2,
     borderColor: '#D1D5DB',
-    borderRadius: 4,
+    borderRadius: 6,
     marginRight: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   checkboxChecked: {
-    backgroundColor: '#4F46E5',
-    borderColor: '#4F46E5',
+    backgroundColor: '#1E3A8A',
+    borderColor: '#1E3A8A',
   },
   checkmark: {
     color: '#FFFFFF',
@@ -375,32 +483,38 @@ const styles = StyleSheet.create({
   },
   termsText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 13,
     color: '#6B7280',
     lineHeight: 20,
   },
   termsLink: {
-    color: '#4F46E5',
+    color: '#1E3A8A',
     fontWeight: '600',
   },
   errorContainer: {
     backgroundColor: '#FEF2F2',
     borderWidth: 1,
     borderColor: '#FECACA',
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: 12,
+    padding: 14,
     marginBottom: 16,
   },
   errorText: {
     color: '#DC2626',
     fontSize: 14,
+    textAlign: 'center',
   },
   button: {
-    backgroundColor: '#4F46E5',
-    borderRadius: 8,
+    backgroundColor: '#1E3A8A',
+    borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
     marginBottom: 24,
+    shadowColor: '#1E3A8A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   buttonDisabled: {
     opacity: 0.7,
@@ -409,6 +523,21 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E5E7EB',
+  },
+  dividerText: {
+    fontSize: 14,
+    color: '#9CA3AF',
+    marginHorizontal: 16,
   },
   signInContainer: {
     flexDirection: 'row',
@@ -421,7 +550,56 @@ const styles = StyleSheet.create({
   },
   signInLink: {
     fontSize: 14,
-    color: '#4F46E5',
+    color: '#1E3A8A',
+    fontWeight: '600',
+  },
+  // Success screen styles
+  successIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#10B981',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  successIconText: {
+    fontSize: 40,
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+  emailText: {
+    color: '#1E3A8A',
+    fontWeight: '600',
+  },
+  instructionsCard: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 32,
+  },
+  instructionsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 12,
+  },
+  instructionsText: {
+    fontSize: 14,
+    color: '#6B7280',
+    lineHeight: 24,
+  },
+  resendButton: {
+    borderWidth: 2,
+    borderColor: '#1E3A8A',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  resendButtonText: {
+    color: '#1E3A8A',
+    fontSize: 16,
     fontWeight: '600',
   },
 });

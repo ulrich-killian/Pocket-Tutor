@@ -1,346 +1,202 @@
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  ScrollView,
-  SafeAreaView,
-  Dimensions,
-} from 'react-native';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthState } from '../src/hooks/useAuth';
+import { useEffect } from 'react';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withDelay,
+  Easing,
+} from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
+const PROGRESS_WIDTH = width - 80;
 
-export default function LandingPage() {
+export default function SplashScreen() {
   const router = useRouter();
   const { isAuthenticated, initialized } = useAuthState();
 
-  // If already authenticated, redirect to protected area
-  if (initialized && isAuthenticated) {
-    router.replace('/dashboard');
-    return null;
-  }
+  // Animation values
+  const logoOpacity = useSharedValue(0);
+  const titleOpacity = useSharedValue(0);
+  const subtitleOpacity = useSharedValue(0);
+  const loadingOpacity = useSharedValue(0);
+  const progressWidth = useSharedValue(0);
 
-  const features = [
-    {
-      icon: '📚',
-      title: 'AI-Powered Tutoring',
-      description: 'Get instant help from our AI tutor for any subject',
-    },
-    {
-      icon: '🃏',
-      title: 'Smart Flashcards',
-      description: 'Create and study flashcards powered by AI',
-    },
-    {
-      icon: '📝',
-      title: 'Interactive Quizzes',
-      description: 'Test your knowledge with AI-generated quizzes',
-    },
-    {
-      icon: '📄',
-      title: 'Document Analysis',
-      description: 'Upload and learn from your study materials',
-    },
-  ];
+  // Animated styles
+  const logoAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: logoOpacity.value,
+  }));
+
+  const titleAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: titleOpacity.value,
+  }));
+
+  const subtitleAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: subtitleOpacity.value,
+  }));
+
+  const loadingAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: loadingOpacity.value,
+  }));
+
+  const progressAnimatedStyle = useAnimatedStyle(() => ({
+    width: progressWidth.value,
+  }));
+
+  // Animation sequence
+  useEffect(() => {
+    // 1. Logo fades in slowly (1500ms)
+    logoOpacity.value = withTiming(1, {
+      duration: 1500,
+      easing: Easing.out(Easing.ease),
+    });
+
+    // 2. Title fades in after logo (1500ms more)
+    titleOpacity.value = withDelay(
+      1500,
+      withTiming(1, { duration: 1500, easing: Easing.out(Easing.ease) }),
+    );
+
+    // 3. Subtitle fades in after title (1500ms more)
+    subtitleOpacity.value = withDelay(
+      3000,
+      withTiming(1, { duration: 1500, easing: Easing.out(Easing.ease) }),
+    );
+
+    // 4. Loading shows after subtitle is done (5000ms total)
+    loadingOpacity.value = withDelay(5000, withTiming(1, { duration: 500 }));
+
+    // 5. Progress bar starts after loading appears
+    progressWidth.value = withDelay(
+      5500,
+      withTiming(PROGRESS_WIDTH, { duration: 2500, easing: Easing.linear }),
+    );
+  }, []);
+
+  // Navigate after progress completes
+  useEffect(() => {
+    if (initialized) {
+      // Total: 5000 (fade in) + 500 (loading fade in) + 2500 (progress) = 8000ms
+      const timer = setTimeout(() => {
+        if (isAuthenticated) {
+          router.replace('/dashboard');
+        } else {
+          router.replace('/(auth)/login');
+        }
+      }, 8000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [initialized, isAuthenticated]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.logo}>Pocket Tutor</Text>
+    <View style={styles.container}>
+      {/* Logo */}
+      <Animated.View style={[styles.logoWrapper, logoAnimatedStyle]}>
+        <View style={styles.logoCircle}>
+          <Text style={styles.logoText}>PT</Text>
         </View>
+      </Animated.View>
 
-        {/* Hero Section with Image Background */}
-        <View style={styles.heroContainer}>
-          <View style={styles.heroBackground}>
-            <View style={styles.gradientOverlay} />
-          </View>
-          <View style={styles.heroContent}>
-            <Text style={styles.heroTitle}>Learn Smarter,{'\n'}Not Harder</Text>
-            <Text style={styles.heroSubtitle}>
-              Your AI-powered learning companion that helps you achieve your
-              academic goals faster
-            </Text>
-            <TouchableOpacity
-              style={styles.primaryButton}
-              onPress={() => router.push('/(auth)/login')}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.primaryButtonText}>Get Started Free</Text>
-            </TouchableOpacity>
-            <Text style={styles.heroNote}>No credit card required</Text>
-          </View>
+      {/* Title */}
+      <Animated.View style={titleAnimatedStyle}>
+        <Text style={styles.title}>Pocket Tutor</Text>
+      </Animated.View>
+
+      {/* Subtitle */}
+      <Animated.View style={subtitleAnimatedStyle}>
+        <Text style={styles.subtitle}>Your AI-Powered Learning Companion</Text>
+      </Animated.View>
+
+      {/* Loading Section */}
+      <Animated.View style={[styles.loadingWrapper, loadingAnimatedStyle]}>
+        <Text style={styles.loadingText}>Loading...</Text>
+        <View style={styles.progressBarBg}>
+          <Animated.View
+            style={[styles.progressBarFill, progressAnimatedStyle]}
+          />
         </View>
+      </Animated.View>
 
-        {/* Trust Badges */}
-        <View style={styles.trustBadges}>
-          <View style={styles.badge}>
-            <Text style={styles.badgeIcon}>🎯</Text>
-            <Text style={styles.badgeText}>98% Success Rate</Text>
-          </View>
-          <View style={styles.badge}>
-            <Text style={styles.badgeIcon}>⚡</Text>
-            <Text style={styles.badgeText}>Instant Answers</Text>
-          </View>
-          <View style={styles.badge}>
-            <Text style={styles.badgeIcon}>🔒</Text>
-            <Text style={styles.badgeText}>Secure & Private</Text>
-          </View>
-        </View>
-
-        {/* Features Section */}
-        <View style={styles.features}>
-          <Text style={styles.sectionTitle}>What You Can Do</Text>
-
-          {features.map((feature, index) => (
-            <View key={index} style={styles.featureItem}>
-              <View style={styles.featureIcon}>
-                <Text style={styles.featureEmoji}>{feature.icon}</Text>
-              </View>
-              <View style={styles.featureText}>
-                <Text style={styles.featureTitle}>{feature.title}</Text>
-                <Text style={styles.featureDescription}>
-                  {feature.description}
-                </Text>
-              </View>
-            </View>
-          ))}
-        </View>
-
-        {/* CTA Section */}
-        <View style={styles.cta}>
-          <Text style={styles.ctaTitle}>Ready to Start Learning?</Text>
-          <TouchableOpacity
-            style={styles.secondaryButton}
-            onPress={() => router.push('/(auth)/login')}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.secondaryButtonText}>Get Started Now</Text>
-          </TouchableOpacity>
-
-          <View style={styles.secondaryRow}>
-            <Text style={styles.secondaryText}>Already have an account?</Text>
-            <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
-              <Text style={styles.secondaryLink}>Sign In</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            © 2024 Pocket Tutor. Powered by AI.
-          </Text>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+      {/* Version */}
+      <Text style={styles.version}>v1.0.0</Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 8,
+    backgroundColor: '#1E3A8A',
     alignItems: 'center',
-  },
-  logo: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#4F46E5',
-    letterSpacing: -0.5,
-  },
-  heroContainer: {
-    position: 'relative',
-    height: 340,
-    marginHorizontal: 16,
-    borderRadius: 24,
-    overflow: 'hidden',
-    marginBottom: 24,
-  },
-  heroBackground: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#4F46E5',
-  },
-  gradientOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#4338CA',
-    opacity: 0.3,
-  },
-  heroContent: {
-    position: 'relative',
-    flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 32,
+    paddingHorizontal: 32,
   },
-  heroTitle: {
+  logoWrapper: {
+    marginBottom: 28,
+  },
+  logoCircle: {
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  logoText: {
+    fontSize: 52,
+    fontWeight: '900',
+    color: '#1E3A8A',
+  },
+  title: {
     fontSize: 36,
     fontWeight: '800',
     color: '#FFFFFF',
     textAlign: 'center',
-    marginBottom: 12,
-    letterSpacing: -1,
-    lineHeight: 44,
+    marginBottom: 10,
   },
-  heroSubtitle: {
+  subtitle: {
     fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.9)',
+    color: '#93C5FD',
     textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 24,
-    paddingHorizontal: 8,
+    paddingHorizontal: 15,
+    lineHeight: 23,
   },
-  primaryButton: {
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 16,
-    paddingHorizontal: 40,
-    borderRadius: 16,
-    marginBottom: 12,
+  loadingWrapper: {
+    position: 'absolute',
+    bottom: 100,
+    alignItems: 'center',
   },
-  primaryButtonText: {
-    color: '#4F46E5',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  heroNote: {
+  loadingText: {
     fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.7)',
-  },
-  trustBadges: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    marginBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  badge: {
-    alignItems: 'center',
-  },
-  badgeIcon: {
-    fontSize: 24,
-    marginBottom: 4,
-  },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#6B7280',
-  },
-  features: {
-    paddingHorizontal: 24,
-    paddingBottom: 32,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 20,
-    textAlign: 'center',
-    letterSpacing: -0.5,
-  },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 16,
-    padding: 16,
+    color: '#93C5FD',
     marginBottom: 12,
+    fontWeight: '500',
   },
-  featureIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#EEF2FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
+  progressBarBg: {
+    width: PROGRESS_WIDTH,
+    height: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    borderRadius: 2,
+    overflow: 'hidden',
   },
-  featureEmoji: {
-    fontSize: 28,
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 2,
   },
-  featureText: {
-    flex: 1,
-  },
-  featureTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 4,
-  },
-  featureDescription: {
-    fontSize: 14,
-    color: '#6B7280',
-    lineHeight: 20,
-  },
-  cta: {
-    paddingHorizontal: 24,
-    paddingVertical: 32,
-    backgroundColor: '#F9FAFB',
-    alignItems: 'center',
-  },
-  ctaTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 16,
-    letterSpacing: -0.5,
-  },
-  secondaryButton: {
-    backgroundColor: '#4F46E5',
-    paddingVertical: 16,
-    paddingHorizontal: 40,
-    borderRadius: 16,
-    width: '100%',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  secondaryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  secondaryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  secondaryText: {
-    fontSize: 14,
-    color: '#6B7280',
-  },
-  secondaryLink: {
-    fontSize: 14,
-    color: '#4F46E5',
-    fontWeight: '700',
-    marginLeft: 4,
-  },
-  footer: {
-    paddingVertical: 24,
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 12,
-    color: '#9CA3AF',
+  version: {
+    position: 'absolute',
+    bottom: 45,
+    fontSize: 13,
+    color: '#60A5FA',
+    fontWeight: '500',
   },
 });

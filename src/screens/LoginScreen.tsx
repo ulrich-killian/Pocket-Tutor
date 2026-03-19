@@ -40,7 +40,6 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   }, [cooldown]);
 
   const handleLogin = async () => {
-    // Validate inputs
     if (!email.trim()) {
       setError('Please enter your email address');
       return;
@@ -51,14 +50,12 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       return;
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError('Please enter a valid email address');
       return;
     }
 
-    // Check if on cooldown
     if (cooldown > 0) {
       setError(`Please wait ${cooldown} second(s) before trying again`);
       return;
@@ -68,19 +65,17 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
     try {
       await signIn(email.trim(), password);
-      // Navigate to dashboard after successful login
       router.replace('/dashboard');
     } catch (err) {
-      // Handle rate limiting (429 error) or specific rate limit error code
       if (
         err instanceof AuthError &&
         (err.statusCode === 429 || err.code === 'over_email_send_rate_limit')
       ) {
-        setCooldown(60); // 60 second cooldown
+        setCooldown(60);
         const errorMessage =
           err.code === 'over_email_send_rate_limit'
-            ? 'Email rate limit exceeded. Please wait 60 seconds before trying again.'
-            : 'Too many requests. Please wait 60 seconds before trying again.';
+            ? 'Email rate limit exceeded. Please wait 60 seconds.'
+            : 'Too many requests. Please wait 60 seconds.';
         setError(errorMessage);
         return;
       }
@@ -126,12 +121,22 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
+        {/* Logo */}
+        <View style={styles.logoContainer}>
+          <View style={styles.logoCircle}>
+            <Text style={styles.logoText}>PT</Text>
+          </View>
+        </View>
+
+        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Welcome Back</Text>
           <Text style={styles.subtitle}>Sign in to continue learning</Text>
         </View>
 
+        {/* Form */}
         <View style={styles.form}>
           {/* Email Input */}
           <View style={styles.inputContainer}>
@@ -151,7 +156,12 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
           {/* Password Input */}
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Password</Text>
+            <View style={styles.labelRow}>
+              <Text style={styles.label}>Password</Text>
+              <TouchableOpacity onPress={handleForgotPassword}>
+                <Text style={styles.forgotLink}>Forgot?</Text>
+              </TouchableOpacity>
+            </View>
             <View style={styles.passwordContainer}>
               <TextInput
                 style={styles.passwordInput}
@@ -172,14 +182,6 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
               </TouchableOpacity>
             </View>
           </View>
-
-          {/* Forgot Password Link */}
-          <TouchableOpacity
-            onPress={handleForgotPassword}
-            style={styles.forgotPassword}
-          >
-            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-          </TouchableOpacity>
 
           {/* Error Message */}
           {error && (
@@ -206,6 +208,13 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
             )}
           </TouchableOpacity>
 
+          {/* Divider */}
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
           {/* Sign Up Link */}
           <View style={styles.signUpContainer}>
             <Text style={styles.signUpText}>Don't have an account? </Text>
@@ -227,38 +236,69 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingTop: 80,
     paddingBottom: 40,
   },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  logoCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#1E3A8A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  logoText: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
   header: {
-    marginBottom: 40,
+    alignItems: 'center',
+    marginBottom: 32,
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
+    fontSize: 28,
+    fontWeight: '700',
     color: '#1F2937',
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 15,
     color: '#6B7280',
   },
-  form: {
-    flex: 1,
-  },
+  form: {},
   inputContainer: {
     marginBottom: 20,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
     color: '#374151',
-    marginBottom: 8,
+  },
+  forgotLink: {
+    fontSize: 14,
+    color: '#1E3A8A',
+    fontWeight: '500',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
@@ -269,8 +309,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
     backgroundColor: '#F9FAFB',
   },
   passwordInput: {
@@ -286,36 +326,33 @@ const styles = StyleSheet.create({
   },
   togglePasswordText: {
     fontSize: 14,
-    color: '#4F46E5',
-    fontWeight: '600',
-  },
-  forgotPassword: {
-    alignSelf: 'flex-end',
-    marginBottom: 24,
-  },
-  forgotPasswordText: {
-    fontSize: 14,
-    color: '#4F46E5',
+    color: '#1E3A8A',
     fontWeight: '600',
   },
   errorContainer: {
     backgroundColor: '#FEF2F2',
     borderWidth: 1,
     borderColor: '#FECACA',
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: 12,
+    padding: 14,
     marginBottom: 16,
   },
   errorText: {
     color: '#DC2626',
     fontSize: 14,
+    textAlign: 'center',
   },
   button: {
-    backgroundColor: '#4F46E5',
-    borderRadius: 8,
+    backgroundColor: '#1E3A8A',
+    borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
     marginBottom: 24,
+    shadowColor: '#1E3A8A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   buttonDisabled: {
     opacity: 0.7,
@@ -324,6 +361,21 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E5E7EB',
+  },
+  dividerText: {
+    fontSize: 14,
+    color: '#9CA3AF',
+    marginHorizontal: 16,
   },
   signUpContainer: {
     flexDirection: 'row',
@@ -336,7 +388,7 @@ const styles = StyleSheet.create({
   },
   signUpLink: {
     fontSize: 14,
-    color: '#4F46E5',
+    color: '#1E3A8A',
     fontWeight: '600',
   },
 });

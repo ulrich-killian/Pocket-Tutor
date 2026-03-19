@@ -62,6 +62,15 @@ export default function Dashboard() {
       bgColor: '#FFFBEB',
       route: '/quiz',
     },
+    {
+      id: '4',
+      icon: 'folder' as keyof typeof Ionicons.glyphMap,
+      title: 'Documents',
+      description: 'Upload & manage files',
+      color: '#8B5CF6',
+      bgColor: '#F5F3FF',
+      route: '/documents',
+    },
   ];
 
   const quickActions = [

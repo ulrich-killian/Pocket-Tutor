@@ -1,3 +1,4 @@
+import React from 'react';
 import {
   View,
   Text,
@@ -12,25 +13,72 @@ import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 export default function Dashboard() {
   const router = useRouter();
 
-  // Navbar Icons
-  const Navbar = () => (
-    <View style={styles.navbar}>
-      <View style={styles.logoContainer}>
-        <FontAwesome5 name="graduation-cap" size={24} color="#1E3A8A" />
-        <Text style={styles.logoText}>PocketTutor</Text>
-      </View>
-      <View style={styles.navbarIcons}>
-        <TouchableOpacity style={styles.navbarIcon}>
-          <Ionicons name="language" size={22} color="#1E3A8A" />
+  // Bottom Tab Navigation
+  const [activeTab, setActiveTab] = React.useState('home');
+
+  const tabs = [
+    {
+      id: 'home',
+      name: 'Home',
+      icon: 'home' as keyof typeof Ionicons.glyphMap,
+      activeIcon: 'home' as keyof typeof Ionicons.glyphMap,
+      route: '/dashboard',
+    },
+    {
+      id: 'study',
+      name: 'Study',
+      icon: 'book-outline' as keyof typeof Ionicons.glyphMap,
+      activeIcon: 'book' as keyof typeof Ionicons.glyphMap,
+      route: '/chat',
+    },
+    {
+      id: 'flashcards',
+      name: 'Flashcards',
+      icon: 'albums-outline' as keyof typeof Ionicons.glyphMap,
+      activeIcon: 'albums' as keyof typeof Ionicons.glyphMap,
+      route: '/flashcards',
+    },
+    {
+      id: 'profile',
+      name: 'Profile',
+      icon: 'person-outline' as keyof typeof Ionicons.glyphMap,
+      activeIcon: 'person' as keyof typeof Ionicons.glyphMap,
+      route: '/dashboard',
+    },
+  ];
+
+  const handleTabPress = (tab: (typeof tabs)[0]) => {
+    setActiveTab(tab.id);
+    if (tab.route !== '/dashboard') {
+      router.push(tab.route as any);
+    }
+  };
+
+  // Bottom Tab Bar
+  const BottomTabBar = () => (
+    <View style={styles.bottomTabBar}>
+      {tabs.map((tab) => (
+        <TouchableOpacity
+          key={tab.id}
+          style={styles.tabItem}
+          onPress={() => handleTabPress(tab)}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name={activeTab === tab.id ? tab.activeIcon : tab.icon}
+            size={24}
+            color={activeTab === tab.id ? '#1E3A8A' : '#9CA3AF'}
+          />
+          <Text
+            style={[
+              styles.tabLabel,
+              { color: activeTab === tab.id ? '#1E3A8A' : '#9CA3AF' },
+            ]}
+          >
+            {tab.name}
+          </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navbarIcon}>
-          <Ionicons name="notifications-outline" size={22} color="#1E3A8A" />
-          <View style={styles.notificationBadge} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navbarProfileButton}>
-          <Ionicons name="person" size={20} color="#1E3A8A" />
-        </TouchableOpacity>
-      </View>
+      ))}
     </View>
   );
 
@@ -136,7 +184,6 @@ export default function Dashboard() {
 
   return (
     <View style={styles.container}>
-      <Navbar />
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -284,6 +331,7 @@ export default function Dashboard() {
         {/* Bottom Spacing */}
         <View style={{ height: 30 }} />
       </ScrollView>
+      <BottomTabBar />
     </View>
   );
 }
@@ -293,61 +341,30 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F3F4F6',
   },
-  navbar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  logoText: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1E3A8A',
-    marginLeft: 8,
-  },
-  navbarIcons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  navbarIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#EEF2FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  notificationBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#EF4444',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
-  navbarProfileButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#EEF2FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   scrollView: {
     flex: 1,
+  },
+  bottomTabBar: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    paddingTop: 8,
+    paddingBottom: 24,
+    paddingHorizontal: 16,
+    justifyContent: 'space-around',
+    alignItems: 'center',
+  },
+  tabItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 4,
+    minWidth: 60,
+  },
+  tabLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    marginTop: 4,
   },
   header: {
     backgroundColor: '#1E3A8A',

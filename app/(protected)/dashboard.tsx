@@ -85,6 +85,15 @@ export default function Dashboard() {
   const features = [
     {
       id: '1',
+      icon: 'cloud-upload' as keyof typeof Ionicons.glyphMap,
+      title: 'Upload',
+      description: 'Upload study materials',
+      color: '#EC4899',
+      bgColor: '#FDF2F8',
+      route: '/upload',
+    },
+    {
+      id: '2',
       icon: 'chatbubbles' as keyof typeof Ionicons.glyphMap,
       title: 'AI Chat',
       description: 'Chat with your AI tutor',
@@ -93,7 +102,7 @@ export default function Dashboard() {
       route: '/chat',
     },
     {
-      id: '2',
+      id: '3',
       icon: 'albums' as keyof typeof Ionicons.glyphMap,
       title: 'Flashcards',
       description: 'Create & study cards',
@@ -102,7 +111,7 @@ export default function Dashboard() {
       route: '/flashcards',
     },
     {
-      id: '3',
+      id: '4',
       icon: 'document-text' as keyof typeof Ionicons.glyphMap,
       title: 'Quiz',
       description: 'Test your knowledge',
@@ -111,10 +120,10 @@ export default function Dashboard() {
       route: '/quiz',
     },
     {
-      id: '4',
+      id: '5',
       icon: 'folder' as keyof typeof Ionicons.glyphMap,
       title: 'Documents',
-      description: 'Upload & manage files',
+      description: 'View your files',
       color: '#8B5CF6',
       bgColor: '#F5F3FF',
       route: '/documents',

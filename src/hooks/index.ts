@@ -8,3 +8,6 @@ export {
   GuestRoute,
 } from './useAuth';
 export type { AuthContextType, AuthState } from './useAuth';
+
+export { useDocumentStatus } from './useDocumentStatus';
+export type { DocumentStatus } from './useDocumentStatus';

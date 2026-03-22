@@ -13,6 +13,14 @@ import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 export default function Dashboard() {
   const router = useRouter();
 
+  // Get time-based greeting
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
+
   // Bottom Tab Navigation
   const [activeTab, setActiveTab] = React.useState('home');
 
@@ -43,7 +51,7 @@ export default function Dashboard() {
       name: 'Profile',
       icon: 'person-outline' as keyof typeof Ionicons.glyphMap,
       activeIcon: 'person' as keyof typeof Ionicons.glyphMap,
-      route: '/dashboard',
+      route: '/profile',
     },
   ];
 
@@ -200,51 +208,66 @@ export default function Dashboard() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerTop}>
-            <View>
-              <Text style={styles.greeting}>Good morning 👋</Text>
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.greeting}>{getGreeting()} 👋</Text>
               <Text style={styles.userName}>Welcome back!</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.notificationButton}
+              onPress={() => router.push('/profile' as any)}
+            >
+              <Ionicons name="person" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>12</Text>
+              <Text style={styles.headerStatLabel}>Flashcards</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>5</Text>
+              <Text style={styles.headerStatLabel}>Quizzes</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>8h</Text>
+              <Text style={styles.headerStatLabel}>Study Time</Text>
             </View>
           </View>
         </View>
 
         {/* Welcome Card */}
         <View style={styles.welcomeCard}>
+          <View style={styles.welcomeCardOverlay} />
           <View style={styles.welcomeContent}>
+            <View style={styles.welcomeBadge}>
+              <Ionicons name="sparkles" size={12} color="#1E3A8A" />
+              <Text style={styles.welcomeBadgeText}>AI Powered</Text>
+            </View>
             <Text style={styles.welcomeTitle}>Ready to learn?</Text>
             <Text style={styles.welcomeSubtitle}>
-              Continue where you left off
+              Continue your learning journey where you left off
             </Text>
             <TouchableOpacity
               style={styles.continueButton}
               onPress={() => router.push('/chat' as any)}
+              activeOpacity={0.8}
             >
-              <Text style={styles.continueButtonText}>Continue Learning</Text>
-              <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+              <View style={styles.continueButtonContent}>
+                <Text style={styles.continueButtonText}>Continue Learning</Text>
+                <View style={styles.continueButtonIcon}>
+                  <Ionicons name="arrow-forward" size={16} color="#1E3A8A" />
+                </View>
+              </View>
             </TouchableOpacity>
           </View>
-          <View style={styles.welcomeIcon}>
-            <FontAwesome5 name="graduation-cap" size={50} color="#FFFFFF" />
-          </View>
-        </View>
-
-        {/* Quick Stats */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Your Progress</Text>
-          <View style={styles.statsGrid}>
-            {quickActions.map((action) => (
-              <View key={action.id} style={styles.statCard}>
-                <View
-                  style={[
-                    styles.statIcon,
-                    { backgroundColor: action.color + '15' },
-                  ]}
-                >
-                  <Ionicons name={action.icon} size={22} color={action.color} />
-                </View>
-                <Text style={styles.statValue}>{action.value}</Text>
-                <Text style={styles.statLabel}>{action.label}</Text>
-              </View>
-            ))}
+          <View style={styles.welcomeRight}>
+            <View style={styles.welcomeIconContainer}>
+              <FontAwesome5 name="graduation-cap" size={44} color="#FFFFFF" />
+            </View>
+            <View style={styles.welcomeDecoCircle1} />
+            <View style={styles.welcomeDecoCircle2} />
           </View>
         </View>
 
@@ -378,23 +401,81 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#1E3A8A',
     paddingTop: 50,
-    paddingBottom: 30,
+    paddingBottom: 24,
     paddingHorizontal: 20,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
   },
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  headerTextContainer: {
+    flex: 1,
+  },
+  notificationButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    backgroundColor: '#EF4444',
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  notificationBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    marginTop: 20,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statNumber: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  headerStatLabel: {
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginTop: 2,
+  },
+  statDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   greeting: {
     fontSize: 14,
-    color: '#BFDBFE',
+    color: '#93C5FD',
     marginBottom: 4,
+    fontWeight: '500',
   },
   userName: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -413,54 +494,123 @@ const styles = StyleSheet.create({
   },
   welcomeCard: {
     flexDirection: 'row',
-    backgroundColor: '#1E3A8A',
+    backgroundColor: '#2563EB',
     marginHorizontal: 20,
-    marginTop: -20,
-    borderRadius: 20,
+    marginTop: -24,
+    borderRadius: 24,
     padding: 20,
-    shadowColor: '#1E3A8A',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
+    overflow: 'hidden',
+    shadowColor: '#1E40AF',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  welcomeCardOverlay: {
+    position: 'absolute',
+    top: -50,
+    right: -50,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
   welcomeContent: {
-    flex: 1,
+    flex: 1.2,
+    zIndex: 1,
+  },
+  welcomeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+    marginBottom: 12,
+  },
+  welcomeBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#1E3A8A',
+    marginLeft: 4,
   },
   welcomeTitle: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 22,
+    fontWeight: '800',
     color: '#FFFFFF',
-    marginBottom: 6,
+    marginBottom: 8,
+    letterSpacing: -0.5,
   },
   welcomeSubtitle: {
     fontSize: 14,
     color: '#BFDBFE',
-    marginBottom: 16,
+    marginBottom: 18,
+    lineHeight: 20,
   },
   continueButton: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    borderRadius: 14,
+    alignSelf: 'flex-start',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  continueButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
   },
   continueButtonText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#1E3A8A',
-    marginRight: 8,
   },
-  welcomeIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  continueButtonIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#DBEAFE',
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 10,
+  },
+  welcomeRight: {
+    flex: 0.8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  welcomeIconContainer: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  welcomeDecoCircle1: {
+    position: 'absolute',
+    top: 10,
+    right: 0,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  welcomeDecoCircle2: {
+    position: 'absolute',
+    bottom: 15,
+    right: 15,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
   },
   section: {
     paddingHorizontal: 20,

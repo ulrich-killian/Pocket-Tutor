@@ -1,15 +1,21 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import StatusBadge, { DocumentStatus } from './StatusBadge';
 import { Document } from '../src/types/document';
 
-interface DocumentCardProps {
-  document: Document;
-  onDelete: (document: Document) => void;
-  onPress?: (document: Document) => void;
+export interface DocumentWithStatus extends Document {
+  status?: DocumentStatus;
 }
 
-// Helper functions for file icons
+interface DocumentCardWithStatusProps {
+  document: DocumentWithStatus;
+  onDelete: (document: DocumentWithStatus) => void;
+  onPress?: (document: DocumentWithStatus) => void;
+  onRetry?: (document: DocumentWithStatus) => void;
+}
+
+// Helper functions
 const getFileIcon = (fileName: string): string => {
   const extension = fileName?.split('.').pop()?.toLowerCase() || '';
   switch (extension) {
@@ -40,14 +46,6 @@ const getFileIconColor = (fileName: string): string => {
   }
 };
 
-const formatFileSize = (bytes?: number): string => {
-  if (!bytes || bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-};
-
 const formatDate = (dateString?: string): string => {
   if (!dateString) return 'Unknown date';
   const date = new Date(dateString);
@@ -58,26 +56,24 @@ const formatDate = (dateString?: string): string => {
   });
 };
 
-export default function DocumentCard({
+export default function DocumentCardWithStatus({
   document,
   onDelete,
   onPress,
-}: DocumentCardProps) {
-  const fileName = document.title; // Use title instead of name
+  onRetry,
+}: DocumentCardWithStatusProps) {
+  const fileName = document.title; // Use title from backend
   const iconName = getFileIcon(fileName) as keyof typeof Ionicons.glyphMap;
   const iconColor = getFileIconColor(fileName);
-  const formattedSize = formatFileSize(0); // Backend doesn't provide size
   const formattedDate = formatDate(document.created_at);
+  const status = document.status || 'pending';
 
   const handleDelete = () => {
     Alert.alert(
       'Delete Document',
       `Are you sure you want to delete "${fileName}"?`,
       [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
+        { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
@@ -88,50 +84,95 @@ export default function DocumentCard({
   };
 
   const handlePress = () => {
+    if (status === 'error' && onRetry) {
+      Alert.alert(
+        'Processing Error',
+        'Would you like to retry processing this document?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Retry', onPress: () => onRetry(document) },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: () => onDelete(document),
+          },
+        ],
+      );
+      return;
+    }
+
+    if (status === 'processing' || status === 'uploading') {
+      Alert.alert(
+        'Please Wait',
+        "This document is still being processed. Please wait until it's ready.",
+      );
+      return;
+    }
+
     if (onPress) {
       onPress(document);
     }
   };
 
-  // Get file type from title
-  const getFileType = () => {
-    const extension = fileName?.split('.').pop()?.toUpperCase() || '';
-    return extension || 'FILE';
-  };
+  const isProcessing = status === 'uploading' || status === 'processing';
 
   return (
     <TouchableOpacity
-      style={styles.container}
+      style={[styles.container, isProcessing && styles.containerProcessing]}
       onPress={handlePress}
       activeOpacity={0.7}
     >
       <View
-        style={[styles.iconContainer, { backgroundColor: iconColor + '15' }]}
+        style={[
+          styles.iconContainer,
+          { backgroundColor: iconColor + '15' },
+          isProcessing && styles.iconContainerProcessing,
+        ]}
       >
-        <Ionicons name={iconName} size={24} color={iconColor} />
+        <Ionicons
+          name={iconName}
+          size={24}
+          color={isProcessing ? '#9CA3AF' : iconColor}
+        />
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.name} numberOfLines={1} ellipsizeMode="middle">
+        <Text
+          style={[styles.name, isProcessing && styles.nameProcessing]}
+          numberOfLines={1}
+          ellipsizeMode="middle"
+        >
           {fileName}
         </Text>
         <View style={styles.metadata}>
-          <Text style={styles.metadataText}>{formattedSize}</Text>
-          <Text style={styles.metadataDot}>•</Text>
           <Text style={styles.metadataText}>{formattedDate}</Text>
         </View>
-        <View style={styles.typeTag}>
-          <Text style={styles.typeText}>{getFileType()}</Text>
-        </View>
+
+        {/* Status Badge */}
+        <StatusBadge status={status} size="small" showLabel={true} />
       </View>
 
-      <TouchableOpacity
-        style={styles.deleteButton}
-        onPress={handleDelete}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      >
-        <Ionicons name="trash-outline" size={20} color="#EF4444" />
-      </TouchableOpacity>
+      {/* Only show delete button when not processing */}
+      {!isProcessing && (
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={handleDelete}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="trash-outline" size={20} color="#EF4444" />
+        </TouchableOpacity>
+      )}
+
+      {/* Show cancel button when processing */}
+      {isProcessing && (
+        <TouchableOpacity
+          style={styles.cancelButton}
+          onPress={handleDelete}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="close-circle" size={24} color="#9CA3AF" />
+        </TouchableOpacity>
+      )}
     </TouchableOpacity>
   );
 }
@@ -150,6 +191,12 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
+  containerProcessing: {
+    backgroundColor: '#FAFAFA',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderStyle: 'dashed',
+  },
   iconContainer: {
     width: 50,
     height: 50,
@@ -157,6 +204,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
+  },
+  iconContainerProcessing: {
+    backgroundColor: '#F3F4F6',
   },
   content: {
     flex: 1,
@@ -167,6 +217,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1F2937',
     marginBottom: 4,
+  },
+  nameProcessing: {
+    color: '#9CA3AF',
   },
   metadata: {
     flexDirection: 'row',
@@ -182,23 +235,18 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     marginHorizontal: 6,
   },
-  typeTag: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#F3F4F6',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  typeText: {
-    fontSize: 11,
-    color: '#6B7280',
-    fontWeight: '500',
-  },
   deleteButton: {
     width: 40,
     height: 40,
     borderRadius: 10,
     backgroundColor: '#FEF2F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cancelButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },

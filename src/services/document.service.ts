@@ -9,14 +9,13 @@ export const documentService = {
   ): Promise<UploadResponse> {
     try {
       const formData = new FormData();
-
       formData.append('userId', userId);
       formData.append('title', title);
-      formData.append('file', {
-        uri: file.uri,
-        name: file.name,
-        type: file.type,
-      } as any);
+
+      const fileResponse = await fetch(file.uri);
+      const fileBlob = await fileResponse.blob();
+
+      formData.append('file', fileBlob, file.name);
 
       const response = await api.post('/documents/upload', formData, {
         headers: {
@@ -25,13 +24,7 @@ export const documentService = {
         timeout: 60000,
       });
 
-      // Your backend returns { message: 'Document processed successfully', data: {...} }
-      // So we need to extract the data from response.data.data
-      const uploadResponse = response.data.data;
-
-      console.log('Upload success:', uploadResponse);
-
-      return uploadResponse;
+      return response.data.data;
     } catch (err: any) {
       console.error('Upload error details:', {
         message: err.message,

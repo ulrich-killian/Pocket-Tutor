@@ -70,13 +70,11 @@ export default function DocumentsScreen() {
     useState<ProcessingStep>('uploading');
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
 
-  // Document list state
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Get current user
   useEffect(() => {
     const getUser = async () => {
       const {
@@ -89,7 +87,6 @@ export default function DocumentsScreen() {
     getUser();
   }, []);
 
-  // Fetch documents
   const fetchDocuments = useCallback(async () => {
     if (!userId) return;
 

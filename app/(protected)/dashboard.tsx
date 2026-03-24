@@ -6,9 +6,12 @@ import {
   StyleSheet,
   ScrollView,
   Image,
+  Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
+
+const { width } = Dimensions.get('window');
 
 export default function Dashboard() {
   const router = useRouter();
@@ -138,6 +141,31 @@ export default function Dashboard() {
     },
   ];
 
+  // Course progress data
+  const courses = [
+    {
+      id: '1',
+      title: 'Introduction to Physics',
+      progress: 65,
+      lessons: '8/12 lessons',
+      color: '#4F46E5',
+    },
+    {
+      id: '2',
+      title: 'Calculus Fundamentals',
+      progress: 42,
+      lessons: '5/12 lessons',
+      color: '#10B981',
+    },
+    {
+      id: '3',
+      title: 'Chemistry Basics',
+      progress: 88,
+      lessons: '11/12 lessons',
+      color: '#F59E0B',
+    },
+  ];
+
   const quickActions = [
     {
       id: '1',
@@ -212,27 +240,98 @@ export default function Dashboard() {
               <Text style={styles.greeting}>{getGreeting()} 👋</Text>
               <Text style={styles.userName}>Welcome back!</Text>
             </View>
-            <TouchableOpacity
-              style={styles.notificationButton}
-              onPress={() => router.push('/profile' as any)}
-            >
-              <Ionicons name="person" size={24} color="#FFFFFF" />
-            </TouchableOpacity>
+            <View style={styles.headerRight}>
+              <TouchableOpacity style={styles.searchButton}>
+                <Ionicons name="search" size={22} color="#FFFFFF" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.notificationButton}
+                onPress={() => router.push('/profile' as any)}
+              >
+                <Ionicons name="person" size={24} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
           </View>
+
+          {/* Search Bar */}
+          <View style={styles.searchContainer}>
+            <Ionicons name="search" size={18} color="#9CA3AF" />
+            <Text style={styles.searchPlaceholder}>
+              Search courses, documents...
+            </Text>
+          </View>
+
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>12</Text>
-              <Text style={styles.headerStatLabel}>Flashcards</Text>
+              <View style={styles.statIconContainer}>
+                <MaterialIcons name="style" size={18} color="#4F46E5" />
+              </View>
+              <View>
+                <Text style={styles.statNumber}>12</Text>
+                <Text style={styles.headerStatLabel}>Flashcards</Text>
+              </View>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>5</Text>
-              <Text style={styles.headerStatLabel}>Quizzes</Text>
+              <View
+                style={[
+                  styles.statIconContainer,
+                  { backgroundColor: '#FFFBEB' },
+                ]}
+              >
+                <Ionicons name="document-text" size={18} color="#F59E0B" />
+              </View>
+              <View>
+                <Text style={styles.statNumber}>5</Text>
+                <Text style={styles.headerStatLabel}>Quizzes</Text>
+              </View>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>8h</Text>
-              <Text style={styles.headerStatLabel}>Study Time</Text>
+              <View
+                style={[
+                  styles.statIconContainer,
+                  { backgroundColor: '#ECFDF5' },
+                ]}
+              >
+                <Ionicons name="time" size={18} color="#10B981" />
+              </View>
+              <View>
+                <Text style={styles.statNumber}>8h</Text>
+                <Text style={styles.headerStatLabel}>Study Time</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Streak Card */}
+          <View style={styles.streakContainer}>
+            <View style={styles.streakLeft}>
+              <View style={styles.streakBadge}>
+                <Ionicons name="flame" size={16} color="#F59E0B" />
+              </View>
+              <View>
+                <Text style={styles.streakTitle}>5 Day Streak!</Text>
+                <Text style={styles.streakSubtitle}>Keep it up</Text>
+              </View>
+            </View>
+            <View style={styles.streakProgress}>
+              <View style={styles.streakDays}>
+                {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
+                  <View
+                    key={i}
+                    style={[styles.streakDay, i < 5 && styles.streakDayActive]}
+                  >
+                    <Text
+                      style={[
+                        styles.streakDayText,
+                        i < 5 && styles.streakDayTextActive,
+                      ]}
+                    >
+                      {day}
+                    </Text>
+                  </View>
+                ))}
+              </View>
             </View>
           </View>
         </View>
@@ -273,7 +372,57 @@ export default function Dashboard() {
 
         {/* Learning Paths */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Learning Paths</Text>
+          <Text style={styles.sectionTitle}>My Courses</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.courseScroll}
+          >
+            {courses.map((course) => (
+              <TouchableOpacity
+                key={course.id}
+                style={styles.courseCard}
+                activeOpacity={0.8}
+              >
+                <View
+                  style={[
+                    styles.courseHeader,
+                    { backgroundColor: course.color },
+                  ]}
+                >
+                  <FontAwesome5 name="book-open" size={20} color="#FFFFFF" />
+                </View>
+                <View style={styles.courseContent}>
+                  <Text style={styles.courseTitle} numberOfLines={1}>
+                    {course.title}
+                  </Text>
+                  <Text style={styles.courseLessons}>{course.lessons}</Text>
+                  <View style={styles.progressContainer}>
+                    <View style={styles.progressBar}>
+                      <View
+                        style={[
+                          styles.progressFill,
+                          {
+                            width: `${course.progress}%`,
+                            backgroundColor: course.color,
+                          },
+                        ]}
+                      />
+                    </View>
+                    <Text style={styles.progressText}>{course.progress}%</Text>
+                  </View>
+                </View>
+                <View style={styles.courseAction}>
+                  <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Quick Actions Grid */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.featuresGrid}>
             {features.map((feature) => (
               <TouchableOpacity
@@ -422,6 +571,100 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  searchButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginTop: 16,
+    gap: 10,
+  },
+  searchPlaceholder: {
+    flex: 1,
+    fontSize: 14,
+    color: '#93C5FD',
+  },
+  statIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#EEF2FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  streakContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginTop: 16,
+  },
+  streakLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  streakBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(245, 158, 11, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  streakTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  streakSubtitle: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.7)',
+  },
+  streakProgress: {
+    alignItems: 'flex-end',
+  },
+  streakDays: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  streakDay: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  streakDayActive: {
+    backgroundColor: '#F59E0B',
+  },
+  streakDayText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.5)',
+  },
+  streakDayTextActive: {
+    color: '#FFFFFF',
   },
   notificationBadge: {
     position: 'absolute',
@@ -615,6 +858,70 @@ const styles = StyleSheet.create({
   section: {
     paddingHorizontal: 20,
     marginTop: 28,
+  },
+  courseScroll: {
+    marginTop: 8,
+  },
+  courseCard: {
+    width: width * 0.7,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    marginRight: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  courseHeader: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  courseContent: {
+    flex: 1,
+  },
+  courseTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  courseLessons: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginBottom: 12,
+  },
+  progressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  progressBar: {
+    flex: 1,
+    height: 6,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 3,
+    marginRight: 10,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  progressText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6B7280',
+    minWidth: 35,
+  },
+  courseAction: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
   },
   sectionHeader: {
     flexDirection: 'row',

@@ -7,8 +7,8 @@ import type {
 export const sendMessage = async (
   payload: SendMessagePayload,
 ): Promise<SendMessageResponse> => {
-  // Call the /chat/ask endpoint with the correct payload structure
-  const { data } = await api.post<SendMessageResponse>('/chat/ask', {
+  // Call the /api/chat/ask endpoint with the correct payload structure
+  const { data } = await api.post<SendMessageResponse>('/api/chat/ask', {
     documentId: payload.documentId,
     userId: payload.userId,
     question: payload.message,

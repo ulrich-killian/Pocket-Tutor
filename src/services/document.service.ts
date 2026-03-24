@@ -17,7 +17,7 @@ export const documentService = {
 
       formData.append('file', fileBlob, file.name);
 
-      const response = await api.post('/api/documents/upload', formData, {
+      const response = await api.post('/documents/upload', formData, {
         headers: {
           Accept: 'application/json',
         },
@@ -40,7 +40,7 @@ export const documentService = {
 
   async getUserDocuments(userId: string): Promise<Document[]> {
     try {
-      const response = await api.get<Document[]>(`/api/documents/${userId}`);
+      const response = await api.get<Document[]>(`/documents/${userId}`);
       return response.data;
     } catch (err: any) {
       console.error('Fetch documents error:', err.message);
@@ -50,7 +50,7 @@ export const documentService = {
 
   async deleteDocument(path: string): Promise<void> {
     try {
-      await api.delete('/api/documents', { data: { path } });
+      await api.delete('/documents', { data: { path } });
     } catch (err: any) {
       console.error('Delete document error:', err.message);
       throw new DocumentError(err.message || 'Failed to delete document');

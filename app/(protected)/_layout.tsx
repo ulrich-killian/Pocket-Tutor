@@ -27,6 +27,7 @@ export default function ProtectedLayout() {
       <Stack.Screen name="flashcards" />
       <Stack.Screen name="quiz" />
       <Stack.Screen name="documents" />
+      <Stack.Screen name="profile" />
     </Stack>
   );
 }

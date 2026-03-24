@@ -14,7 +14,6 @@ import {
 import { useRouter } from 'expo-router';
 import { useAuth } from '../hooks/useAuth';
 import { AuthError } from '../services/authService';
-
 interface LoginScreenProps {
   navigation?: {
     navigate: (screen: string) => void;
@@ -30,6 +29,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
+  const [showLoader, setShowLoader] = useState(false);
 
   // Cooldown timer effect
   useEffect(() => {
@@ -63,9 +63,16 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
     setError(null);
 
+    // Show the loader immediately when login is triggered
+    setShowLoader(true);
+
     try {
       await signIn(email.trim(), password);
-      router.replace('/dashboard');
+      // Keep loader visible for a moment to show the transition
+      setTimeout(() => {
+        setShowLoader(false);
+        router.replace('/dashboard');
+      }, 1500);
     } catch (err) {
       if (
         err instanceof AuthError &&
@@ -87,6 +94,8 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       } else {
         setError('An unexpected error occurred. Please try again.');
       }
+      // Hide loader on error
+      setShowLoader(false);
     }
   };
 

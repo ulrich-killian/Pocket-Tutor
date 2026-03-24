@@ -17,7 +17,7 @@ export const documentService = {
 
       formData.append('file', fileBlob, file.name);
 
-      const response = await api.post('/api/documents/upload', formData, {
+      const response = await api.post('/documents/upload', formData, {
         headers: {
           Accept: 'application/json',
         },

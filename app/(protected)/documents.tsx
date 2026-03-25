@@ -60,6 +60,127 @@ export default function DocumentsScreen() {
     }
   }, [userId, fetchDocuments]);
 
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
+
+  const handleSelectFile = async () => {
+    try {
+      const mimeTypes = getMimeTypeForFileType(selectedType || undefined);
+
+      const result = await DocumentPicker.getDocumentAsync({
+        type: mimeTypes,
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return;
+      }
+
+      const file = result.assets[0];
+
+      // Check file size (max 20MB)
+      if (file.size && file.size > 20 * 1024 * 1024) {
+        Alert.alert('File Too Large', 'Maximum file size is 20MB');
+        return;
+      }
+
+      setSelectedFile({
+        uri: file.uri,
+        name: file.name,
+        type: file.mimeType || 'application/octet-stream',
+        size: file.size || 0,
+      });
+    } catch (error) {
+      console.error('Error selecting file:', error);
+      Alert.alert('Error', 'Failed to select file');
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile || !userId) {
+      Alert.alert('Error', 'Please sign in to upload documents');
+      return;
+    }
+
+    try {
+      setCurrentView('processing');
+      setProcessingStep('uploading');
+      setErrorMessage(undefined);
+
+      console.log(' Starting upload for:', selectedFile.name);
+
+      // Upload and get the response
+      const uploadedDoc = await documentService.uploadDocument(
+        userId,
+        {
+          uri: selectedFile.uri,
+          name: selectedFile.name,
+          type: selectedFile.type,
+        },
+        subject || selectedFile.name,
+      );
+
+      console.log(' Upload successful! Document:', uploadedDoc);
+      console.log(' Document ID:', uploadedDoc.id);
+
+      setProcessingStep('extracting');
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      setProcessingStep('generating');
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      setProcessingStep('ready');
+
+      // Navigate directly to chat with the uploaded document
+      setTimeout(() => {
+        console.log('Navigating to chat with document:', uploadedDoc.id);
+        // Reset form state
+        setSelectedFile(null);
+        setSubject('');
+        setSelectedType(null);
+        // Navigate to chat
+        router.push({
+          pathname: '/chat',
+          params: { documentId: uploadedDoc.id },
+        });
+      }, 1500);
+    } catch (error) {
+      console.error(' Upload error:', error);
+      setProcessingStep('error');
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : 'Upload failed. Please try again.',
+      );
+    }
+  };
+  // end here
+  const handleProcessingComplete = () => {
+    // Reset and show list
+    setSelectedFile(null);
+    setSubject('');
+    setSelectedType(null);
+    setCurrentView('list');
+    fetchDocuments();
+  };
+
+  const handleProcessingClose = () => {
+    setCurrentView('upload');
+    setProcessingStep('uploading');
+    setErrorMessage(undefined);
+  };
+
+  const handleReset = () => {
+    setSelectedFile(null);
+    setSubject('');
+    setSelectedType(null);
+  };
+
   const handleDelete = async (document: Document) => {
     try {
       await documentService.deleteDocument(document.path);

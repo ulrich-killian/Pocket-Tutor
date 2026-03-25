@@ -183,7 +183,6 @@ export default function ProcessingScreen({
 
       {/* Content */}
       <View style={styles.content}>
-        {/* Circular Progress */}
         <View style={styles.circularContainer}>
           <Animated.View
             style={[
@@ -211,7 +210,6 @@ export default function ProcessingScreen({
         <Text style={styles.fileName} numberOfLines={2}>
           {fileName}
         </Text>
-        --------- {/* Status Text */} ---------
         <Text style={styles.statusText}>
           {isError
             ? 'Error processing document'

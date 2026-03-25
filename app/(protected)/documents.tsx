@@ -195,7 +195,10 @@ export default function DocumentsScreen() {
         setSubject('');
         setSelectedType(null);
         // Navigate to chat
-        router.push(`/chat?documentId=${uploadedDoc.id}`);
+        router.push({
+          pathname: '/chat',
+          params: { documentId: uploadedDoc.id },
+        });
       }, 1500);
     } catch (error) {
       console.error(' Upload error:', error);

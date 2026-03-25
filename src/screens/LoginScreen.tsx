@@ -233,6 +233,16 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           </View>
         </View>
       </ScrollView>
+
+      {/* Loading Overlay */}
+      {showLoader && (
+        <View style={styles.loaderOverlay}>
+          <View style={styles.loaderContainer}>
+            <ActivityIndicator size="large" color="#1E3A8A" />
+            <Text style={styles.loaderText}>Logging you in...</Text>
+          </View>
+        </View>
+      )}
     </KeyboardAvoidingView>
   );
 }
@@ -399,5 +409,32 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#1E3A8A',
     fontWeight: '600',
+  },
+  loaderOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loaderContainer: {
+    backgroundColor: '#FFFFFF',
+    padding: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  loaderText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#1F2937',
+    fontWeight: '500',
   },
 });

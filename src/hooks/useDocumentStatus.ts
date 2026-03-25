@@ -7,22 +7,16 @@ interface DocumentStatusState {
 }
 
 interface UseDocumentStatusOptions {
-  pollingInterval?: number; // in milliseconds
+  pollingInterval?: number;
   onStatusChange?: (documentId: string, newStatus: DocumentStatus) => void;
 }
 
-/**
- * Hook for managing document processing status with polling
- */
 export function useDocumentStatus(options: UseDocumentStatusOptions = {}) {
   const { onStatusChange } = options;
   const [statuses, setStatuses] = useState<DocumentStatusState>({});
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const processingDocsRef = useRef<Set<string>>(new Set());
 
-  /**
-   * Set status for a document
-   */
   const setStatus = useCallback(
     (documentId: string, status: DocumentStatus) => {
       setStatuses((prev) => {
@@ -32,7 +26,6 @@ export function useDocumentStatus(options: UseDocumentStatusOptions = {}) {
         return { ...prev, [documentId]: status };
       });
 
-      // Track processing documents
       if (status === 'processing' || status === 'uploading') {
         processingDocsRef.current.add(documentId);
       } else {
@@ -42,9 +35,6 @@ export function useDocumentStatus(options: UseDocumentStatusOptions = {}) {
     [onStatusChange],
   );
 
-  /**
-   * Get status for a document
-   */
   const getStatus = useCallback(
     (documentId: string): DocumentStatus => {
       return statuses[documentId] || 'ready';
@@ -52,9 +42,6 @@ export function useDocumentStatus(options: UseDocumentStatusOptions = {}) {
     [statuses],
   );
 
-  /**
-   * Start tracking a document upload
-   */
   const startUpload = useCallback(
     (documentId: string) => {
       setStatus(documentId, 'uploading');
@@ -62,9 +49,6 @@ export function useDocumentStatus(options: UseDocumentStatusOptions = {}) {
     [setStatus],
   );
 
-  /**
-   * Mark upload complete, start processing
-   */
   const startProcessing = useCallback(
     (documentId: string) => {
       setStatus(documentId, 'processing');
@@ -72,9 +56,6 @@ export function useDocumentStatus(options: UseDocumentStatusOptions = {}) {
     [setStatus],
   );
 
-  /**
-   * Mark document as ready
-   */
   const markReady = useCallback(
     (documentId: string) => {
       setStatus(documentId, 'ready');
@@ -82,9 +63,6 @@ export function useDocumentStatus(options: UseDocumentStatusOptions = {}) {
     [setStatus],
   );
 
-  /**
-   * Mark document as error
-   */
   const markError = useCallback(
     (documentId: string) => {
       setStatus(documentId, 'error');
@@ -92,9 +70,6 @@ export function useDocumentStatus(options: UseDocumentStatusOptions = {}) {
     [setStatus],
   );
 
-  /**
-   * Remove status tracking for a document
-   */
   const removeStatus = useCallback((documentId: string) => {
     setStatuses((prev) => {
       const newStatuses = { ...prev };
@@ -104,30 +79,19 @@ export function useDocumentStatus(options: UseDocumentStatusOptions = {}) {
     processingDocsRef.current.delete(documentId);
   }, []);
 
-  /**
-   * Check if any documents are processing
-   */
   const hasProcessingDocuments = useCallback(() => {
     return processingDocsRef.current.size > 0;
   }, []);
 
-  /**
-   * Get count of processing documents
-   */
   const getProcessingCount = useCallback(() => {
     return processingDocsRef.current.size;
   }, []);
 
-  /**
-   * Simulate processing completion (for demo/testing)
-   * In production, this would poll the backend
-   */
   const simulateProcessing = useCallback(
     (documentId: string, duration: number = 5000) => {
       startProcessing(documentId);
 
       setTimeout(() => {
-        // 90% success rate simulation
         if (Math.random() > 0.1) {
           markReady(documentId);
         } else {
@@ -138,7 +102,6 @@ export function useDocumentStatus(options: UseDocumentStatusOptions = {}) {
     [startProcessing, markReady, markError],
   );
 
-  // Cleanup polling on unmount
   useEffect(() => {
     const currentPolling = pollingRef.current;
     return () => {

@@ -8,34 +8,70 @@ import {
   KeyboardAvoidingView,
   Platform,
   ListRenderItemInfo,
+  TouchableOpacity,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useChat } from '../../src/hooks/useChat';
-import { useSessionStore } from '../../src/store/sessionStore';
+import { useAuth } from '../../src/hooks/useAuth';
 import ChatBubble from '../../components/chat/ChatBubble';
 import ChatInput from '../../components/chat/ChatInput';
 import type { ChatMessage } from '../../src/types/chat.types';
 
 export default function ChatScreen(): React.JSX.Element {
   const router = useRouter();
-  const { sessionId, initializeSession } = useSessionStore();
+  const params = useLocalSearchParams();
 
-  // Initialize session on mount
-  useEffect(() => {
-    if (!sessionId) {
-      initializeSession();
-    }
-  }, [sessionId, initializeSession]);
+  // Get the document ID from navigation params
+  const documentId = params.documentId as string;
 
-  // Use a default document ID (you may want to get this from a documents list)
-  const documentId = 'default-doc';
-  const { messages, send, loading, error } = useChat(sessionId, documentId);
+  // Get the authenticated user from your auth hook
+  const { user } = useAuth();
+  const userId = user?.id;
+
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
+  console.log('🔍 ChatScreen - All params:', params);
+  console.log('🔍 ChatScreen - documentId:', documentId);
+  console.log('🔍 ChatScreen - userId:', userId);
+
+  // Don't proceed if no user or document
+  if (!userId || !documentId) {
+    return (
+      <View style={styles.errorContainer}>
+        <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
+        <Text style={styles.errorTitle}>
+          {!userId ? 'Please log in to continue' : 'No document selected'}
+        </Text>
+        <Text style={styles.errorText}>
+          {!userId
+            ? 'Sign in to access your documents'
+            : 'Select a document from your library'}
+        </Text>
+        <TouchableOpacity
+          style={styles.errorButton}
+          onPress={() => router.back()}
+        >
+          <Text style={styles.errorButtonText}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const { messages, send, loading, error } = useChat(userId, documentId);
+
   const handleSend = async (text: string): Promise<void> => {
+    if (!text.trim()) return;
+    console.log(
+      '📤 Sending message with userId:',
+      userId,
+      'documentId:',
+      documentId,
+    );
     await send(text);
-    listRef.current?.scrollToEnd({ animated: true });
+    setTimeout(() => {
+      listRef.current?.scrollToEnd({ animated: true });
+    }, 100);
   };
 
   const renderItem = ({
@@ -54,16 +90,17 @@ export default function ChatScreen(): React.JSX.Element {
     >
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text style={styles.headerTitle}>AI Chat</Text>
-          <Text style={styles.headerSubtitle}>Chat with your tutor</Text>
-        </View>
         <TouchableOpacity
           style={styles.headerButton}
           onPress={() => router.back()}
         >
           <Ionicons name="chevron-back" size={24} color="#1E3A8A" />
         </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>AI Chat</Text>
+          <Text style={styles.headerSubtitle}>Chat with your tutor</Text>
+        </View>
+        <View style={styles.headerButton} />
       </View>
 
       <FlatList<ChatMessage>
@@ -91,8 +128,6 @@ export default function ChatScreen(): React.JSX.Element {
   );
 }
 
-import { TouchableOpacity } from 'react-native';
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -109,16 +144,17 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
-  headerLeft: {
+  headerCenter: {
     flex: 1,
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
     color: '#1F2937',
   },
   headerSubtitle: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#6B7280',
     marginTop: 2,
   },
@@ -126,13 +162,14 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
   },
   list: {
     padding: 16,
     paddingBottom: 8,
+    flexGrow: 1,
   },
   typing: {
     flexDirection: 'row',
@@ -140,6 +177,9 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 16,
     paddingVertical: 8,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
   },
   typingText: { fontSize: 13, color: '#9CA3AF' },
   error: {
@@ -147,5 +187,36 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     padding: 8,
     fontSize: 13,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#F9FAFB',
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  errorButton: {
+    backgroundColor: '#4F46E5',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  errorButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

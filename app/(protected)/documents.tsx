@@ -163,6 +163,8 @@ export default function DocumentsScreen() {
       setProcessingStep('uploading');
       setErrorMessage(undefined);
 
+      console.log(' Starting upload for:', selectedFile.name);
+
       // Upload and get the response
       const uploadedDoc = await documentService.uploadDocument(
         userId,
@@ -174,7 +176,8 @@ export default function DocumentsScreen() {
         subject || selectedFile.name,
       );
 
-      console.log('Uploaded document:', uploadedDoc);
+      console.log(' Upload successful! Document:', uploadedDoc);
+      console.log(' Document ID:', uploadedDoc.id);
 
       setProcessingStep('extracting');
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -184,16 +187,18 @@ export default function DocumentsScreen() {
 
       setProcessingStep('ready');
 
-      // Wait a moment before showing success
+      // Navigate directly to chat with the uploaded document
       setTimeout(() => {
-        setCurrentView('list');
+        console.log('Navigating to chat with document:', uploadedDoc.id);
+        // Reset form state
         setSelectedFile(null);
         setSubject('');
         setSelectedType(null);
-        fetchDocuments(); // Refresh the document list
+        // Navigate to chat
+        router.push(`/chat?documentId=${uploadedDoc.id}`);
       }, 1500);
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error(' Upload error:', error);
       setProcessingStep('error');
       setErrorMessage(
         error instanceof Error
@@ -239,9 +244,20 @@ export default function DocumentsScreen() {
   };
 
   const handleDocumentPress = (document: Document) => {
-    Alert.alert(document.title, `Preview: ${document.preview}`, [
-      { text: 'Close', style: 'cancel' },
-    ]);
+    console.log(' Document pressed:', document);
+    console.log(' Document ID:', document.id);
+    console.log(' Document title:', document.title);
+
+    if (!document.id) {
+      console.error(' Document has no ID!');
+      Alert.alert('Error', 'Cannot open this document');
+      return;
+    }
+
+    router.push({
+      pathname: '/chat',
+      params: { documentId: document.id },
+    });
   };
 
   const onRefresh = useCallback(() => {
@@ -348,13 +364,10 @@ export default function DocumentsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Drag Handle */}
         <View style={styles.dragHandle} />
 
-        {/* Title */}
         <Text style={styles.title}>Upload Study Material</Text>
 
-        {/* File Type Selector */}
         <View style={styles.fileTypesContainer}>
           {FILE_TYPES.map(({ type, icon, label }) => (
             <TouchableOpacity
@@ -417,10 +430,8 @@ export default function DocumentsScreen() {
           )}
         </TouchableOpacity>
 
-        {/* Max File Size */}
         <Text style={styles.maxSizeText}>Max file size: 20MB</Text>
 
-        {/* Subject Input */}
         <View style={styles.inputContainer}>
           <Text style={styles.inputLabel}>Subject (optional)</Text>
           <TextInput
@@ -453,7 +464,6 @@ export default function DocumentsScreen() {
         </View>
       </ScrollView>
 
-      {/* Bottom Actions */}
       <View style={styles.bottomActions}>
         <TouchableOpacity
           style={styles.actionIconButton}

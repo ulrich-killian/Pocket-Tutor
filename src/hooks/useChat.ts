@@ -2,7 +2,6 @@ import { useState, useCallback } from 'react';
 import { sendMessage } from '../services/chat.service';
 import type { ChatMessage } from '../types/chat.types';
 import { randomUUID } from 'expo-crypto';
-import { supabase } from '../lib/supabase';
 
 interface UseChatReturn {
   messages: ChatMessage[];
@@ -13,8 +12,8 @@ interface UseChatReturn {
 }
 
 export const useChat = (
-  sessionId: string,
-  documentId?: string,
+  userId: string, // Changed from sessionId to userId
+  documentId: string, // Changed to required since you're passing it
 ): UseChatReturn => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -34,26 +33,25 @@ export const useChat = (
       setError(null);
 
       try {
-        // Get current user
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) {
-          throw new Error('User not authenticated');
-        }
+        console.log(
+          '📨 Sending message with userId:',
+          userId,
+          'documentId:',
+          documentId,
+        );
 
         const response = await sendMessage({
           message: text,
-          sessionId,
-          documentId: documentId || '',
-          userId: user.id,
+          documentId: documentId,
+          userId: userId, // Use the userId passed to the hook
         });
 
         const aiMessage: ChatMessage = {
           id: randomUUID(),
           role: 'assistant',
-          content: response.reply,
+          content: response.answer, // Changed from response.reply to response.answer
           sources: response.sources,
+          modelUsed: response.modelUsed,
           timestamp: new Date(),
         };
 
@@ -61,12 +59,13 @@ export const useChat = (
       } catch (err: unknown) {
         const message =
           err instanceof Error ? err.message : 'Something went wrong';
+        console.error('Chat error:', message);
         setError(message);
       } finally {
         setLoading(false);
       }
     },
-    [sessionId, documentId],
+    [userId, documentId], // Updated dependencies
   );
 
   const clearError = useCallback((): void => setError(null), []);

@@ -94,16 +94,12 @@ export default function DocumentsScreenWithStatus() {
     }
   }, [userId, fetchDocuments]);
 
-  // Polling for processing documents
   useEffect(() => {
     if (getProcessingCount() > 0) {
       pollingRef.current = setInterval(() => {
-        // Check status of processing documents
         documents.forEach((doc) => {
           const status = getStatus(doc.id);
           if (status === 'processing') {
-            // Simulate completion after some time
-            // In production, this would call the backend to check status
             const random = Math.random();
             if (random > 0.7) {
               markReady(doc.id);
@@ -120,13 +116,11 @@ export default function DocumentsScreenWithStatus() {
     }
   }, [getProcessingCount, documents, getStatus, markReady]);
 
-  // Handle refresh
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchDocuments();
   }, [fetchDocuments]);
 
-  // Handle document upload with progress
   const handleUpload = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -205,17 +199,86 @@ export default function DocumentsScreenWithStatus() {
     }
   };
 
-  // Handle document delete
   const handleDelete = async (document: DocumentWithStatus) => {
-    try {
-      await documentService.deleteDocument(document.path);
-      setDocuments((prev) => prev.filter((doc) => doc.id !== document.id));
-      removeStatus(document.id);
-      Alert.alert('Deleted', `"${document.title}" has been deleted.`);
-    } catch (error) {
-      console.error('Error deleting document:', error);
-      Alert.alert('Error', 'Failed to delete document');
-    }
+    console.log('🗑️ Delete button pressed for document:', {
+      id: document.id,
+      title: document.title,
+      path: document.path,
+      status: document.status,
+    });
+
+    // Show confirmation alert first
+    Alert.alert(
+      'Delete Document',
+      `Are you sure you want to delete "${document.title}"?`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+          onPress: () => console.log('❌ Delete cancelled'),
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            console.log(
+              '✅ User confirmed deletion for document:',
+              document.id,
+            );
+
+            if (!document.id) {
+              console.error('❌ Cannot delete: Document has no ID');
+              Alert.alert('Error', 'Cannot delete this document');
+              return;
+            }
+
+            if (!document.path) {
+              console.error('❌ Cannot delete: Document has no path');
+              Alert.alert(
+                'Error',
+                'Cannot delete this document - missing path',
+              );
+              return;
+            }
+
+            try {
+              console.log(
+                ' Attempting to delete document from backend:',
+                document.path,
+              );
+
+              await documentService.deleteDocument(document.path);
+              console.log(' Delete API call successful');
+
+              console.log(' Removing document from local state:', document.id);
+              setDocuments((prev) => {
+                const filtered = prev.filter((doc) => doc.id !== document.id);
+                console.log(
+                  ` Documents count: ${prev.length} -> ${filtered.length}`,
+                );
+                return filtered;
+              });
+
+              removeStatus(document.id);
+              console.log('Document status removed from local cache');
+
+              Alert.alert('Deleted', `"${document.title}" has been deleted.`);
+            } catch (error) {
+              console.error(' Error deleting document:', error);
+              console.error('Error details:', {
+                message:
+                  error instanceof Error ? error.message : 'Unknown error',
+                stack: error instanceof Error ? error.stack : undefined,
+              });
+              Alert.alert(
+                'Error',
+                `Failed to delete document: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              );
+            }
+          },
+        },
+      ],
+    );
   };
 
   // Handle document press

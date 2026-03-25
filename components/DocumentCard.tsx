@@ -9,7 +9,6 @@ interface DocumentCardProps {
   onPress?: (document: Document) => void;
 }
 
-// Helper functions for file icons
 const getFileIcon = (fileName: string): string => {
   const extension = fileName?.split('.').pop()?.toLowerCase() || '';
   switch (extension) {
@@ -63,37 +62,47 @@ export default function DocumentCard({
   onDelete,
   onPress,
 }: DocumentCardProps) {
-  const fileName = document.title; // Use title instead of name
+  const fileName = document.title;
   const iconName = getFileIcon(fileName) as keyof typeof Ionicons.glyphMap;
   const iconColor = getFileIconColor(fileName);
-  const formattedSize = formatFileSize(0); // Backend doesn't provide size
+  const formattedSize = formatFileSize(0);
   const formattedDate = formatDate(document.created_at);
 
   const handleDelete = () => {
+    console.log('🗑️ Delete icon pressed for document:', {
+      id: document.id,
+      title: document.title,
+      path: document.path,
+    });
+
     Alert.alert(
       'Delete Document',
-      `Are you sure you want to delete "${fileName}"?`,
+      `Are you sure you want to delete "${document.title}"?`,
       [
         {
           text: 'Cancel',
           style: 'cancel',
+          onPress: () => console.log(' Delete cancelled'),
         },
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => onDelete(document),
+          onPress: () => {
+            console.log('Delete confirmed for document:', document.id);
+            onDelete(document);
+          },
         },
       ],
     );
   };
 
   const handlePress = () => {
+    console.log(' DocumentCard pressed:', document.id);
     if (onPress) {
       onPress(document);
     }
   };
 
-  // Get file type from title
   const getFileType = () => {
     const extension = fileName?.split('.').pop()?.toUpperCase() || '';
     return extension || 'FILE';

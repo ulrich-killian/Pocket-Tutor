@@ -8,34 +8,40 @@ export const documentService = {
     title: string,
   ): Promise<UploadResponse> {
     try {
-      console.log(' Uploading document for user:', userId);
+      console.log('--- Upload Start ---');
+      console.log('Target URL:', `${api.defaults.baseURL}/documents/upload`);
 
       const formData = new FormData();
+
       formData.append('userId', userId);
       formData.append('title', title);
 
-      const fileResponse = await fetch(file.uri);
-      const fileBlob = await fileResponse.blob();
+      const filePayload = {
+        uri: file.uri,
+        name: file.name || 'upload.pdf',
+        type: file.type || 'application/pdf',
+      };
 
-      formData.append('file', fileBlob, file.name);
+      formData.append('file', filePayload as any);
 
       const response = await api.post('/documents/upload', formData, {
         headers: {
           Accept: 'application/json',
           'Content-Type': 'multipart/form-data',
         },
+
+        transformRequest: (data) => data,
         timeout: 60000,
       });
 
-      console.log(' Upload response:', response.data);
-
-      const uploadData = response.data.data || response.data;
-      return uploadData;
+      console.log('Upload success:', response.data);
+      return response.data.data || response.data;
     } catch (err: any) {
       console.error('Upload error details:', {
         message: err.message,
         response: err.response?.data,
         status: err.response?.status,
+        axiosError: err.isAxiosError ? 'Yes' : 'No',
       });
 
       throw new DocumentError(

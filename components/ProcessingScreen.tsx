@@ -68,7 +68,6 @@ export default function ProcessingScreen({
   const isCompleted = currentStep === 'ready';
   const isError = currentStep === 'error';
 
-  // Spinning animation for the main icon
   useEffect(() => {
     if (!isCompleted && !isError) {
       const spin = Animated.loop(
@@ -84,7 +83,6 @@ export default function ProcessingScreen({
     }
   }, [isCompleted, isError, spinAnim]);
 
-  // Progress bar animation
   useEffect(() => {
     const targetProgress = (currentStepIndex + 1) / STEPS.length;
     Animated.timing(progressAnim, {
@@ -95,7 +93,6 @@ export default function ProcessingScreen({
     }).start();
   }, [currentStepIndex, progressAnim]);
 
-  // Pulse animation for active step
   useEffect(() => {
     if (!isCompleted && !isError) {
       const pulse = Animated.loop(
@@ -117,7 +114,6 @@ export default function ProcessingScreen({
     }
   }, [isCompleted, isError, pulseAnim]);
 
-  // Auto navigate on complete
   useEffect(() => {
     if (isCompleted && onComplete) {
       const timer = setTimeout(onComplete, 1500);
@@ -143,10 +139,7 @@ export default function ProcessingScreen({
     outputRange: ['0%', '100%'],
   });
 
-  const renderStepIcon = (
-    status: 'completed' | 'active' | 'pending',
-    isLast: boolean,
-  ) => {
+  const renderStepIcon = (status: 'completed' | 'active' | 'pending') => {
     if (status === 'completed') {
       return (
         <View style={styles.stepIconCompleted}>
@@ -154,7 +147,6 @@ export default function ProcessingScreen({
         </View>
       );
     }
-
     if (status === 'active') {
       return (
         <Animated.View
@@ -166,13 +158,11 @@ export default function ProcessingScreen({
         </Animated.View>
       );
     }
-
     return <View style={styles.stepIconPending} />;
   };
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <Ionicons name="arrow-back" size={24} color="#1F2937" />
@@ -181,7 +171,6 @@ export default function ProcessingScreen({
         <View style={styles.headerSpacer} />
       </View>
 
-      {/* Content */}
       <View style={styles.content}>
         <View style={styles.circularContainer}>
           <Animated.View
@@ -206,7 +195,6 @@ export default function ProcessingScreen({
             </View>
           </Animated.View>
         </View>
-        {/* File Name */}
         <Text style={styles.fileName} numberOfLines={2}>
           {fileName}
         </Text>
@@ -217,26 +205,18 @@ export default function ProcessingScreen({
               ? 'Document ready!'
               : 'Processing your document...'}
         </Text>
-        {/* Error Message */}
-        {isError && errorMessage && (
+        {isError && errorMessage ? (
           <Text style={styles.errorText}>{errorMessage}</Text>
-        )}
-        {/* Steps */}
+        ) : null}
+
         <View style={styles.stepsContainer}>
           {STEPS.map((step, index) => {
-            const status = isError
-              ? index < currentStepIndex
-                ? 'completed'
-                : index === currentStepIndex
-                  ? 'active'
-                  : 'pending'
-              : getStepStatus(index, currentStepIndex);
+            const status = getStepStatus(index, currentStepIndex);
             const isLast = index === STEPS.length - 1;
-
             return (
               <View key={step.id} style={styles.stepRow}>
                 <View style={styles.stepIndicator}>
-                  {renderStepIcon(status, isLast)}
+                  {renderStepIcon(status)}
                   {!isLast && (
                     <View
                       style={[
@@ -261,36 +241,30 @@ export default function ProcessingScreen({
         </View>
       </View>
 
-      {/* Footer */}
       <View style={styles.footer}>
-        {!isCompleted && !isError && (
+        {!isCompleted && !isError ? (
           <Text style={styles.footerText}>
             This usually takes less than 30 seconds.
           </Text>
-        )}
-
-        {/* Progress Bar */}
+        ) : null}
         <View style={styles.progressBarContainer}>
           <Animated.View
             style={[styles.progressBar, { width: progressWidth }]}
           />
         </View>
-
-        {/* Action Buttons */}
-        {isCompleted && (
+        {isCompleted ? (
           <TouchableOpacity style={styles.actionButton} onPress={onComplete}>
             <Text style={styles.actionButtonText}>Start Studying</Text>
           </TouchableOpacity>
-        )}
-
-        {isError && (
+        ) : null}
+        {isError ? (
           <TouchableOpacity
             style={[styles.actionButton, styles.retryButton]}
             onPress={handleBack}
           >
             <Text style={styles.actionButtonText}>Try Again</Text>
           </TouchableOpacity>
-        )}
+        ) : null}
       </View>
     </View>
   );

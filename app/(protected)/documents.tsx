@@ -75,9 +75,20 @@ export default function DocumentsScreen() {
   };
 
   const handleDocumentPress = (document: Document) => {
-    Alert.alert(document.title, `Preview: ${document.preview}`, [
-      { text: 'Close', style: 'cancel' },
-    ]);
+    console.log(' Document pressed:', document);
+    console.log(' Document ID:', document.id);
+    console.log(' Document title:', document.title);
+
+    if (!document.id) {
+      console.error(' Document has no ID!');
+      Alert.alert('Error', 'Cannot open this document');
+      return;
+    }
+
+    router.push({
+      pathname: '/chat',
+      params: { documentId: document.id },
+    });
   };
 
   const onRefresh = useCallback(() => {

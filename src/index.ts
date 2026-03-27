@@ -27,10 +27,16 @@ export type {
   SignInParams,
   UpdateProfileParams,
 } from './services';
-export { uploadService, UploadError } from './services';
-export type { UploadResult, UploadOptions } from './services';
-export { chatService, ChatError } from './services';
-export type { MessageRole, ChatMessage, ChatSession } from './services';
+export { documentService, DocumentError } from './services';
+export type { Document, UploadResponse, DocumentStatus } from './services';
+export { sendMessage } from './services';
+export type {
+  MessageRole,
+  ChatMessage,
+  SendMessagePayload,
+  SendMessageResponse,
+  Source,
+} from './services';
 
 // Re-export hooks
 export {

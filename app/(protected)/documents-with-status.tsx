@@ -1,31 +1,27 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  RefreshControl,
-  ActivityIndicator,
-  Alert,
-  Platform,
-} from 'react-native';
-import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
+import { useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Platform,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import DocumentCardWithStatus, {
   DocumentWithStatus,
 } from '../../components/DocumentCardWithStatus';
-import UploadProgress from '../../components/UploadProgress';
 import ProcessingBanner from '../../components/ProcessingBanner';
-import { documentService } from '../../src/services/document.service';
-import {
-  DocumentError,
-  Document,
-  DocumentStatus,
-} from '../../src/types/document';
+import UploadProgress from '../../components/UploadProgress';
 import { useDocumentStatus } from '../../src/hooks/useDocumentStatus';
 import { supabase } from '../../src/lib/supabase';
+import { documentService } from '../../src/services/document.service';
+import { Document, DocumentError } from '../../src/types/document';
 
 const POLLING_INTERVAL = 5000; // 5 seconds
 

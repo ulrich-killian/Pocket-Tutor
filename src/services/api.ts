@@ -1,28 +1,22 @@
+console.log('DEBUG - API URL:', process.env.EXPO_PUBLIC_API_URL);
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL:
-    (process.env.EXPO_PUBLIC_API_URL ?? 'http://192.168.1.32:3000') + '/api',
+  baseURL: process.env.EXPO_PUBLIC_API_URL ?? '',
   timeout: 30000,
-  headers: {
-    apikey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
-  },
+  // headers: {
+  //   apikey: process.env.EXPO_PUBLIC_SUPABASE_SERVICE_ROLE_KEY ?? '',
+  // },
 });
 
 console.log('BASE URL:', api.defaults.baseURL);
 
 api.interceptors.request.use((config) => {
   if (config.data instanceof FormData) {
-    delete config.headers['Content-Type'];
+    // DO NOT delete Content-Type on Android New Arch.
+    // Instead, let it be, or set it explicitly to multipart.
+    config.headers['Content-Type'] = 'multipart/form-data';
   }
-
-  console.log(' Request:', {
-    url: config.url,
-    method: config.method,
-    headers: config.headers,
-    hasFile: config.data instanceof FormData,
-  });
-
   return config;
 });
 
@@ -32,11 +26,17 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    console.error(' Error Response:', {
-      status: error.response?.status,
-      data: error.response?.data,
-      message: error.message,
-    });
+    console.error('--- AXIOS DIAGNOSTICS ---');
+    console.error('Code:', error.code); // e.g., ERR_NETWORK, ECONNABORTED
+    console.error('Config URL:', error.config?.url);
+    console.error('Is Transferred:', error.request?._sent); // Did the bytes even leave the phone?
+
+    if (error.code === 'ERR_NETWORK') {
+      console.error(
+        'Check: 1. Android Cleartext Policy 2. Server Port 3000 Accessibility',
+      );
+    }
+
     return Promise.reject(error);
   },
 );

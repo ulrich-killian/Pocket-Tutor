@@ -1,5 +1,11 @@
+import { Platform } from 'react-native';
 import api from './api';
 import { Document, UploadResponse, DocumentError } from '../types/document';
+
+async function uriToBlob(uri: string): Promise<Blob> {
+  const response = await fetch(uri);
+  return await response.blob();
+}
 
 export const documentService = {
   async uploadDocument(
@@ -13,20 +19,21 @@ export const documentService = {
       console.log('FILE:', file);
 
       const formData = new FormData();
-
       formData.append('userId', userId);
       formData.append('title', title);
 
-      // For React Native, we need to append the file as a proper object
-      formData.append('file', {
-        uri: file.uri,
-        name: file.name || 'upload.pdf',
-        type: file.type || 'application/pdf',
-      } as any);
-
-      // Use fetch instead of axios for more reliable file uploads in React Native
-      const url = `${api.defaults.baseURL}/documents/upload`;
-      console.log('Full URL:', url);
+      if (Platform.OS === 'web') {
+        const blob = await uriToBlob(file.uri);
+        formData.append('file', blob, file.name || 'upload.pdf');
+      } else {
+        // React Native (iOS & Android): must use {uri, name, type} object
+        // Android's XMLHttpRequest cannot serialize Blob in FormData
+        formData.append('file', {
+          uri: file.uri,
+          name: file.name || 'upload.pdf',
+          type: file.type || 'application/octet-stream',
+        } as any);
+      }
 
       const response = await fetch(url, {
         method: 'POST',
@@ -34,6 +41,8 @@ export const documentService = {
         headers: {
           Accept: 'application/json',
         },
+        transformRequest: (data) => data,
+        timeout: 180000,
       });
 
       const responseData = await response.json();
@@ -87,9 +96,9 @@ export const documentService = {
 
   async getUserDocuments(userId: string): Promise<Document[]> {
     try {
-      console.log(' Fetching documents for user:', userId);
+      console.log('Fetching documents for user:', userId);
       const response = await api.get(`/documents/${userId}`);
-      console.log(' Raw response:', response.data);
+      console.log('Raw response:', response.data);
 
       let documents: Document[] = [];
 
@@ -117,10 +126,9 @@ export const documentService = {
 
   async deleteDocument(path: string): Promise<void> {
     try {
-      console.log(' deleteDocument called with path:', path);
+      console.log('deleteDocument called with path:', path);
 
       if (!path) {
-        console.error(' deleteDocument: No path provided');
         throw new DocumentError('Document path is required');
       }
 
@@ -135,15 +143,10 @@ export const documentService = {
 
       return response.data;
     } catch (err: any) {
-      console.error(' deleteDocument error:', {
+      console.error('deleteDocument error:', {
         message: err.message,
         response: err.response?.data,
         status: err.response?.status,
-        config: {
-          url: err.config?.url,
-          method: err.config?.method,
-          data: err.config?.data,
-        },
       });
       throw new DocumentError(err.message || 'Failed to delete document');
     }

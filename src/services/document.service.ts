@@ -31,7 +31,7 @@ export const documentService = {
         },
 
         transformRequest: (data) => data,
-        timeout: 60000,
+        timeout: 180000,
       });
 
       console.log('Upload success:', response.data);

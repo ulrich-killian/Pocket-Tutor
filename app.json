@@ -15,6 +15,7 @@
     },
     "android": {
       "package": "com.pockettutor.app",
+      "usesCleartextTraffic": true,
       "intentFilters": [
         {
           "action": "VIEW",

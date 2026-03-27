@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import api from './api';
 import { Document, UploadResponse, DocumentError } from '../types/document';
 
@@ -16,13 +17,22 @@ export const documentService = {
       console.log('--- Upload Start ---');
       console.log('Target URL:', `${api.defaults.baseURL}/documents/upload`);
 
-      // Convert URI to blob — works for both Android content:// and iOS file://
-      const blob = await uriToBlob(file.uri);
-
       const formData = new FormData();
       formData.append('userId', userId);
       formData.append('title', title);
-      formData.append('file', blob, file.name || 'upload.pdf');
+
+      if (Platform.OS === 'web') {
+        const blob = await uriToBlob(file.uri);
+        formData.append('file', blob, file.name || 'upload.pdf');
+      } else {
+        // React Native (iOS & Android): must use {uri, name, type} object
+        // Android's XMLHttpRequest cannot serialize Blob in FormData
+        formData.append('file', {
+          uri: file.uri,
+          name: file.name || 'upload.pdf',
+          type: file.type || 'application/octet-stream',
+        } as any);
+      }
 
       const response = await api.post('/documents/upload', formData, {
         headers: {

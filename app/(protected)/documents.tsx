@@ -206,10 +206,29 @@ export default function DocumentsScreen() {
       return;
     }
 
-    router.push({
-      pathname: '/chat',
-      params: { documentId: document.id },
-    });
+    Alert.alert(
+      document.title,
+      'What would you like to do with this document?',
+      [
+        {
+          text: 'Chat with AI',
+          onPress: () =>
+            router.push({
+              pathname: '/chat',
+              params: { documentId: document.id },
+            }),
+        },
+        {
+          text: 'Take a Quiz',
+          onPress: () =>
+            router.push({
+              pathname: '/quiz',
+              params: { documentId: document.id },
+            }),
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ],
+    );
   };
 
   const onRefresh = useCallback(() => {

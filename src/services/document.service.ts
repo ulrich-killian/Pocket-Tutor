@@ -1,5 +1,11 @@
+import { Platform } from 'react-native';
 import api from './api';
 import { Document, UploadResponse, DocumentError } from '../types/document';
+
+async function uriToBlob(uri: string): Promise<Blob> {
+  const response = await fetch(uri);
+  return await response.blob();
+}
 
 export const documentService = {
   async uploadDocument(
@@ -12,24 +18,26 @@ export const documentService = {
       console.log('Target URL:', `${api.defaults.baseURL}/documents/upload`);
 
       const formData = new FormData();
-
       formData.append('userId', userId);
       formData.append('title', title);
 
-      const filePayload = {
-        uri: file.uri,
-        name: file.name || 'upload.pdf',
-        type: file.type || 'application/pdf',
-      };
-
-      formData.append('file', filePayload as any);
+      if (Platform.OS === 'web') {
+        const blob = await uriToBlob(file.uri);
+        formData.append('file', blob, file.name || 'upload.pdf');
+      } else {
+        // React Native (iOS & Android): must use {uri, name, type} object
+        // Android's XMLHttpRequest cannot serialize Blob in FormData
+        formData.append('file', {
+          uri: file.uri,
+          name: file.name || 'upload.pdf',
+          type: file.type || 'application/octet-stream',
+        } as any);
+      }
 
       const response = await api.post('/documents/upload', formData, {
         headers: {
           Accept: 'application/json',
-          'Content-Type': 'multipart/form-data',
         },
-
         transformRequest: (data) => data,
         timeout: 180000,
       });
@@ -52,9 +60,9 @@ export const documentService = {
 
   async getUserDocuments(userId: string): Promise<Document[]> {
     try {
-      console.log(' Fetching documents for user:', userId);
+      console.log('Fetching documents for user:', userId);
       const response = await api.get(`/documents/${userId}`);
-      console.log(' Raw response:', response.data);
+      console.log('Raw response:', response.data);
 
       let documents: Document[] = [];
 
@@ -82,10 +90,9 @@ export const documentService = {
 
   async deleteDocument(path: string): Promise<void> {
     try {
-      console.log(' deleteDocument called with path:', path);
+      console.log('deleteDocument called with path:', path);
 
       if (!path) {
-        console.error(' deleteDocument: No path provided');
         throw new DocumentError('Document path is required');
       }
 
@@ -100,15 +107,10 @@ export const documentService = {
 
       return response.data;
     } catch (err: any) {
-      console.error(' deleteDocument error:', {
+      console.error('deleteDocument error:', {
         message: err.message,
         response: err.response?.data,
         status: err.response?.status,
-        config: {
-          url: err.config?.url,
-          method: err.config?.method,
-          data: err.config?.data,
-        },
       });
       throw new DocumentError(err.message || 'Failed to delete document');
     }

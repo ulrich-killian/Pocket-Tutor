@@ -128,7 +128,7 @@ export default function Dashboard() {
       description: 'Test your knowledge',
       color: '#F59E0B',
       bgColor: '#FFFBEB',
-      route: '/quiz',
+      route: '/documents',
     },
     {
       id: '5',

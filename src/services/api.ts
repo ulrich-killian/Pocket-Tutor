@@ -9,6 +9,8 @@ const api = axios.create({
   // },
 });
 
+console.log('BASE URL:', api.defaults.baseURL);
+
 api.interceptors.request.use((config) => {
   if (config.data instanceof FormData) {
     // DO NOT delete Content-Type on Android New Arch.

@@ -16,6 +16,7 @@ export const documentService = {
     try {
       console.log('--- Upload Start ---');
       console.log('Target URL:', `${api.defaults.baseURL}/documents/upload`);
+      console.log('FILE:', file);
 
       const formData = new FormData();
       formData.append('userId', userId);
@@ -34,7 +35,9 @@ export const documentService = {
         } as any);
       }
 
-      const response = await api.post('/documents/upload', formData, {
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData,
         headers: {
           Accept: 'application/json',
         },
@@ -42,19 +45,52 @@ export const documentService = {
         timeout: 180000,
       });
 
-      console.log('Upload success:', response.data);
-      return response.data.data || response.data;
-    } catch (err: any) {
-      console.error('Upload error details:', {
-        message: err.message,
-        response: err.response?.data,
-        status: err.response?.status,
-        axiosError: err.isAxiosError ? 'Yes' : 'No',
-      });
+      const responseData = await response.json();
 
-      throw new DocumentError(
-        err.response?.data?.message || err.message || 'Upload failed',
-      );
+      if (!response.ok) {
+        console.error('Upload failed with status:', response.status);
+        console.error('Response:', responseData);
+        throw new DocumentError(
+          responseData.message ||
+            responseData.error ||
+            `Upload failed with status ${response.status}`,
+        );
+      }
+
+      console.log('Upload success:', responseData);
+      return responseData.data || responseData;
+    } catch (err: any) {
+      // Log detailed error information for debugging
+      console.error('=== Upload Error Debug ===');
+      console.error('Error name:', err.name);
+      console.error('Error message:', err.message);
+      console.error('Error code:', err.code);
+      console.error('Is Axios Error:', err.isAxiosError);
+      console.error('Response:', err.response?.data);
+      console.error('Status:', err.response?.status);
+      console.error('=========================');
+
+      // Provide more helpful error messages
+      let errorMessage = 'Upload failed. Please try again.';
+
+      if (err.code === 'ECONNABORTED') {
+        errorMessage =
+          'Request timed out. Please check your network connection.';
+      } else if (err.code === 'ERR_NETWORK') {
+        errorMessage =
+          'Network error. Please make sure you are connected to the same WiFi network as the server.';
+      } else if (err.response?.status === 413) {
+        errorMessage = 'File is too large. Maximum file size is 20MB.';
+      } else if (err.response?.status === 415) {
+        errorMessage =
+          'Unsupported file type. Please upload a PDF, DOCX, or TXT file.';
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
+      throw new DocumentError(errorMessage);
     }
   },
 

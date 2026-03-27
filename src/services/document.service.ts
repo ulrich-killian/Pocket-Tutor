@@ -39,7 +39,7 @@ export const documentService = {
           Accept: 'application/json',
         },
         transformRequest: (data) => data,
-        timeout: 600000,
+        timeout: 180000,
       });
 
       console.log('Upload success:', response.data);

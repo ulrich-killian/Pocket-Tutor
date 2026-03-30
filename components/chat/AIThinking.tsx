@@ -5,7 +5,7 @@ interface AIThinkingProps {
   visible: boolean;
 }
 
-const AIThinking: React.FC<AIThinkingProps> = ({ visible }) => {
+const AIThinking: React.FC<AIThinkingProps> = React.memo(({ visible }) => {
   if (!visible) return null;
 
   const dot1 = useRef(new Animated.Value(0)).current;
@@ -121,7 +121,7 @@ const AIThinking: React.FC<AIThinkingProps> = ({ visible }) => {
       </View>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

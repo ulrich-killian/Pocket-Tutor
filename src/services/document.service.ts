@@ -28,28 +28,15 @@ export const documentService = {
       const url = `${api.defaults.baseURL}/documents/upload`;
       console.log('Full URL:', url);
 
-      const response = await fetch(url, {
-        method: 'POST',
-        body: formData,
+      const response = await api.post('/documents/upload', formData, {
         headers: {
           Accept: 'application/json',
         },
       });
 
-      const responseData = await response.json();
-
-      if (!response.ok) {
-        console.error('Upload failed with status:', response.status);
-        console.error('Response:', responseData);
-        throw new DocumentError(
-          responseData.message ||
-            responseData.error ||
-            `Upload failed with status ${response.status}`,
-        );
-      }
-
-      console.log('Upload success:', responseData);
-      return responseData.data || responseData;
+      // For axios, response.data contains the data directly
+      console.log('Upload success:', response.data);
+      return response.data;
     } catch (err: any) {
       // Log detailed error information for debugging
       console.error('=== Upload Error Debug ===');

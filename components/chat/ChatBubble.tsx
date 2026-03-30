@@ -1,10 +1,13 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import type { ChatMessage } from '../../src/types/chat.types';
 
 interface ChatBubbleProps {
   message: ChatMessage;
 }
+
+const { width: screenWidth } = Dimensions.get('window');
+const MAX_BUBBLE_WIDTH = screenWidth * 0.75;
 
 export default function ChatBubble({ message }: ChatBubbleProps) {
   const isUser = message.role === 'user';
@@ -16,45 +19,91 @@ export default function ChatBubble({ message }: ChatBubbleProps) {
         isUser ? styles.userContainer : styles.assistantContainer,
       ]}
     >
+      {/* Avatar for AI messages */}
+      {!isUser && (
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>PT</Text>
+        </View>
+      )}
+
       <View
         style={[
-          styles.bubble,
-          isUser ? styles.userBubble : styles.assistantBubble,
+          styles.bubbleWrapper,
+          isUser ? styles.userBubbleWrapper : styles.assistantBubbleWrapper,
         ]}
       >
+        {/* Role indicator */}
         <Text
-          style={[styles.text, isUser ? styles.userText : styles.assistantText]}
+          style={[
+            styles.roleLabel,
+            isUser ? styles.userRoleLabel : styles.assistantRoleLabel,
+          ]}
         >
-          {message.content}
+          {isUser ? 'You' : 'Tutor'}
         </Text>
 
-        {!isUser && message.modelUsed && (
-          <Text style={styles.modelUsed}>Model: {message.modelUsed}</Text>
-        )}
+        <View
+          style={[
+            styles.bubble,
+            isUser ? styles.userBubble : styles.assistantBubble,
+          ]}
+        >
+          <Text
+            style={[
+              styles.text,
+              isUser ? styles.userText : styles.assistantText,
+            ]}
+          >
+            {message.content}
+          </Text>
+        </View>
 
-        {!isUser && message.sources && message.sources.length > 0 && (
-          <View style={styles.sourcesContainer}>
-            <Text style={styles.sourcesTitle}>Sources:</Text>
-            {message.sources.map((source, index) => (
-              <View key={index} style={styles.sourceItem}>
-                <Text style={styles.sourcePreview}>• {source.preview}...</Text>
-              </View>
-            ))}
+        {/* Model used indicator for AI */}
+        {!isUser && message.modelUsed && (
+          <View style={styles.modelBadge}>
+            <Text style={styles.modelBadgeText}>{message.modelUsed}</Text>
           </View>
         )}
 
-        <Text style={styles.timestamp}>
-          {message.timestamp.toLocaleTimeString()}
-        </Text>
+        {/* Sources section */}
+        {!isUser && message.sources && message.sources.length > 0 && (
+          <View style={styles.sourcesContainer}>
+            <View style={styles.sourcesHeader}>
+              <View style={styles.sourceDot} />
+              <Text style={styles.sourcesTitle}>Sources</Text>
+            </View>
+            {message.sources.slice(0, 2).map((source, index) => (
+              <View key={index} style={styles.sourceItem}>
+                <Text style={styles.sourcePreview} numberOfLines={1}>
+                  {source.preview}
+                </Text>
+              </View>
+            ))}
+            {message.sources.length > 2 && (
+              <Text style={styles.moreSources}>
+                +{message.sources.length - 2} more
+              </Text>
+            )}
+          </View>
+        )}
+
+        {/* Timestamp */}
+        <Text style={styles.timestamp}>{formatTime(message.timestamp)}</Text>
       </View>
     </View>
   );
 }
 
+function formatTime(date: Date): string {
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 4,
     flexDirection: 'row',
+    marginVertical: 8,
+    paddingHorizontal: 16,
+    alignItems: 'flex-end',
   },
   userContainer: {
     justifyContent: 'flex-end',
@@ -62,10 +111,51 @@ const styles = StyleSheet.create({
   assistantContainer: {
     justifyContent: 'flex-start',
   },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#6366F1',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  avatarText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  bubbleWrapper: {
+    maxWidth: MAX_BUBBLE_WIDTH,
+  },
+  userBubbleWrapper: {
+    alignItems: 'flex-end',
+  },
+  assistantBubbleWrapper: {
+    alignItems: 'flex-start',
+  },
+  roleLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  userRoleLabel: {
+    color: '#A5B4FC',
+  },
+  assistantRoleLabel: {
+    color: '#6366F1',
+  },
   bubble: {
-    maxWidth: '80%',
-    padding: 12,
-    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
   userBubble: {
     backgroundColor: '#4F46E5',
@@ -79,7 +169,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 15,
-    lineHeight: 20,
+    lineHeight: 22,
   },
   userText: {
     color: '#FFFFFF',
@@ -87,34 +177,64 @@ const styles = StyleSheet.create({
   assistantText: {
     color: '#1F2937',
   },
-  modelUsed: {
-    fontSize: 10,
-    color: '#9CA3AF',
-    marginTop: 4,
+  modelBadge: {
+    alignSelf: 'flex-start',
+    marginTop: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 4,
+  },
+  modelBadgeText: {
+    fontSize: 9,
+    color: '#6B7280',
+    fontWeight: '500',
   },
   sourcesContainer: {
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+  },
+  sourcesHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  sourceDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#6366F1',
+    marginRight: 6,
   },
   sourcesTitle: {
     fontSize: 11,
     fontWeight: '600',
     color: '#6B7280',
-    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   sourceItem: {
-    marginTop: 2,
+    marginTop: 4,
   },
   sourcePreview: {
-    fontSize: 10,
-    color: '#9CA3AF',
+    fontSize: 12,
+    color: '#4B5563',
+    lineHeight: 18,
+  },
+  moreSources: {
+    fontSize: 11,
+    color: '#6366F1',
+    marginTop: 4,
+    fontWeight: '500',
   },
   timestamp: {
     fontSize: 10,
     color: '#9CA3AF',
-    marginTop: 4,
+    marginTop: 6,
     textAlign: 'right',
   },
 });

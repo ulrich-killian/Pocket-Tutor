@@ -1,11 +1,5 @@
-import { Platform } from 'react-native';
 import api from './api';
 import { Document, UploadResponse, DocumentError } from '../types/document';
-
-async function uriToBlob(uri: string): Promise<Blob> {
-  const response = await fetch(uri);
-  return await response.blob();
-}
 
 export const documentService = {
   async uploadDocument(
@@ -16,53 +10,73 @@ export const documentService = {
     try {
       console.log('--- Upload Start ---');
       console.log('Target URL:', `${api.defaults.baseURL}/documents/upload`);
+      console.log('FILE:', file);
 
       const formData = new FormData();
+
       formData.append('userId', userId);
       formData.append('title', title);
 
-      if (Platform.OS === 'web') {
-        const blob = await uriToBlob(file.uri);
-        formData.append('file', blob, file.name || 'upload.pdf');
-      } else {
-        // React Native (iOS & Android): must use {uri, name, type} object
-        // Android's XMLHttpRequest cannot serialize Blob in FormData
-        formData.append('file', {
-          uri: file.uri,
-          name: file.name || 'upload.pdf',
-          type: file.type || 'application/octet-stream',
-        } as any);
-      }
+      // For React Native, we need to append the file as a proper object
+      formData.append('file', {
+        uri: file.uri,
+        name: file.name || 'upload.pdf',
+        type: file.type || 'application/pdf',
+      } as any);
+
+      // Use fetch instead of axios for more reliable file uploads in React Native
+      const url = `${api.defaults.baseURL}/documents/upload`;
+      console.log('Full URL:', url);
 
       const response = await api.post('/documents/upload', formData, {
         headers: {
           Accept: 'application/json',
         },
-        transformRequest: (data) => data,
-        timeout: 180000,
       });
 
+      // For axios, response.data contains the data directly
       console.log('Upload success:', response.data);
-      return response.data.data || response.data;
+      return response.data;
     } catch (err: any) {
-      console.error('Upload error details:', {
-        message: err.message,
-        response: err.response?.data,
-        status: err.response?.status,
-        axiosError: err.isAxiosError ? 'Yes' : 'No',
-      });
+      // Log detailed error information for debugging
+      console.error('=== Upload Error Debug ===');
+      console.error('Error name:', err.name);
+      console.error('Error message:', err.message);
+      console.error('Error code:', err.code);
+      console.error('Is Axios Error:', err.isAxiosError);
+      console.error('Response:', err.response?.data);
+      console.error('Status:', err.response?.status);
+      console.error('=========================');
 
-      throw new DocumentError(
-        err.response?.data?.message || err.message || 'Upload failed',
-      );
+      // Provide more helpful error messages
+      let errorMessage = 'Upload failed. Please try again.';
+
+      if (err.code === 'ECONNABORTED') {
+        errorMessage =
+          'Request timed out. Please check your network connection.';
+      } else if (err.code === 'ERR_NETWORK') {
+        errorMessage =
+          'Network error. Please make sure you are connected to the same WiFi network as the server.';
+      } else if (err.response?.status === 413) {
+        errorMessage = 'File is too large. Maximum file size is 20MB.';
+      } else if (err.response?.status === 415) {
+        errorMessage =
+          'Unsupported file type. Please upload a PDF, DOCX, or TXT file.';
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
+      throw new DocumentError(errorMessage);
     }
   },
 
   async getUserDocuments(userId: string): Promise<Document[]> {
     try {
-      console.log('Fetching documents for user:', userId);
+      console.log(' Fetching documents for user:', userId);
       const response = await api.get(`/documents/${userId}`);
-      console.log('Raw response:', response.data);
+      console.log(' Raw response:', response.data);
 
       let documents: Document[] = [];
 
@@ -90,9 +104,10 @@ export const documentService = {
 
   async deleteDocument(path: string): Promise<void> {
     try {
-      console.log('deleteDocument called with path:', path);
+      console.log(' deleteDocument called with path:', path);
 
       if (!path) {
+        console.error(' deleteDocument: No path provided');
         throw new DocumentError('Document path is required');
       }
 
@@ -107,10 +122,15 @@ export const documentService = {
 
       return response.data;
     } catch (err: any) {
-      console.error('deleteDocument error:', {
+      console.error(' deleteDocument error:', {
         message: err.message,
         response: err.response?.data,
         status: err.response?.status,
+        config: {
+          url: err.config?.url,
+          method: err.config?.method,
+          data: err.config?.data,
+        },
       });
       throw new DocumentError(err.message || 'Failed to delete document');
     }

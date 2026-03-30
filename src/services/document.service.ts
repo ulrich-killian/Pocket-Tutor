@@ -25,8 +25,6 @@ export const documentService = {
         const blob = await uriToBlob(file.uri);
         formData.append('file', blob, file.name || 'upload.pdf');
       } else {
-        // React Native (iOS & Android): must use {uri, name, type} object
-        // Android's XMLHttpRequest cannot serialize Blob in FormData
         formData.append('file', {
           uri: file.uri,
           name: file.name || 'upload.pdf',

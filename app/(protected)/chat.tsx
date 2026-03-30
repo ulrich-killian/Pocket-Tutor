@@ -163,8 +163,7 @@ export default function ChatScreen(): React.JSX.Element {
       />
 
       {/* AI Thinking indicator */}
-      <AIThinking visible={loading} />
-
+      {loading ? <AIThinking visible={true} /> : null}
       {/* Error message */}
       {error && (
         <View style={styles.errorBanner}>

@@ -8,6 +8,7 @@ import {
   Image,
   Alert,
   Switch,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -16,12 +17,20 @@ import {
   FontAwesome5,
   AntDesign,
 } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../src/hooks/useAuth';
+
+const CLOUDINARY_CLOUD_NAME =
+  process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME || '';
+const CLOUDINARY_UPLOAD_PRESET =
+  process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET || '';
 
 export default function Profile() {
   const router = useRouter();
-  const { user, signOut } = useAuth();
+  const { user, signOut, updateUserMetadata } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [localAvatarUri, setLocalAvatarUri] = useState<string | null>(null);
 
   // Settings states
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -46,6 +55,66 @@ export default function Profile() {
       return user.email.split('@')[0];
     }
     return 'User';
+  };
+
+  // Handle avatar pick and upload
+  const handlePickAvatar = async () => {
+    try {
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'Please allow access to your photo library to change your profile picture.',
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
+
+      if (result.canceled || !result.assets || result.assets.length === 0)
+        return;
+
+      const image = result.assets[0];
+      if (!user?.id) return;
+
+      setIsUploadingAvatar(true);
+
+      const formData = new FormData();
+      formData.append('file', {
+        uri: image.uri,
+        name: `avatar_${user.id}.jpg`,
+        type: image.mimeType || 'image/jpeg',
+      } as any);
+      formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+      formData.append('folder', 'pocket-tutor/avatars');
+
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+        { method: 'POST', body: formData },
+      );
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error?.message || 'Upload failed');
+      }
+
+      const avatarUrl = `${data.secure_url}?t=${Date.now()}`;
+      setLocalAvatarUri(avatarUrl);
+      await updateUserMetadata({ avatar_url: avatarUrl });
+
+      Alert.alert('Success', 'Profile picture updated!');
+    } catch (error: any) {
+      console.error('Avatar upload error:', error);
+      Alert.alert('Error', error.message || 'Failed to update profile picture');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
   };
 
   // Handle logout
@@ -279,18 +348,29 @@ export default function Profile() {
         {/* Profile Card */}
         <View style={styles.profileCard}>
           <View style={styles.avatarContainer}>
-            {user?.user_metadata?.avatar_url ? (
+            {localAvatarUri || user?.user_metadata?.avatar_url ? (
               <Image
-                source={{ uri: user.user_metadata.avatar_url }}
+                source={{
+                  uri: localAvatarUri || user?.user_metadata?.avatar_url,
+                }}
                 style={styles.avatar}
+                key={localAvatarUri || user?.user_metadata?.avatar_url}
               />
             ) : (
               <View style={styles.avatarPlaceholder}>
                 <Text style={styles.avatarText}>{getUserInitials()}</Text>
               </View>
             )}
-            <TouchableOpacity style={styles.editAvatarButton}>
-              <Ionicons name="camera" size={16} color="#FFFFFF" />
+            <TouchableOpacity
+              style={styles.editAvatarButton}
+              onPress={handlePickAvatar}
+              disabled={isUploadingAvatar}
+            >
+              {isUploadingAvatar ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Ionicons name="camera" size={16} color="#FFFFFF" />
+              )}
             </TouchableOpacity>
           </View>
           <Text style={styles.userName}>{getDisplayName()}</Text>

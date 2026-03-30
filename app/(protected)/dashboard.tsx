@@ -10,11 +10,13 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
+import { useAuth } from '../../src/hooks/useAuth';
 
 const { width } = Dimensions.get('window');
 
 export default function Dashboard() {
   const router = useRouter();
+  const { user } = useAuth();
 
   // Get time-based greeting
   const getGreeting = () => {
@@ -248,7 +250,14 @@ export default function Dashboard() {
                 style={styles.notificationButton}
                 onPress={() => router.push('/profile' as any)}
               >
-                <Ionicons name="person" size={24} color="#FFFFFF" />
+                {user?.user_metadata?.avatar_url ? (
+                  <Image
+                    source={{ uri: user.user_metadata.avatar_url }}
+                    style={{ width: 44, height: 44, borderRadius: 22 }}
+                  />
+                ) : (
+                  <Ionicons name="person" size={24} color="#FFFFFF" />
+                )}
               </TouchableOpacity>
             </View>
           </View>

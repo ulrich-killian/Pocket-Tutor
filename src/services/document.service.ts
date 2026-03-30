@@ -28,7 +28,7 @@ export const documentService = {
       const url = `${api.defaults.baseURL}/documents/upload`;
       console.log('Full URL:', url);
 
-      const response = await api.post('/api/documents/upload', formData, {
+      const response = await api.post('/documents/upload', formData, {
         headers: {
           Accept: 'application/json',
         },

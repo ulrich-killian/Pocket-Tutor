@@ -252,8 +252,7 @@ export default function Profile() {
       subtitle: 'Update your personal information',
       color: '#4F46E5',
       bgColor: '#EEF2FF',
-      onPress: () =>
-        Alert.alert('Edit Profile', 'Profile editing coming soon!'),
+      onPress: () => router.push('/(protected)/edit-profile'),
     },
     {
       id: '2',

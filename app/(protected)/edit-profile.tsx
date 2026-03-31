@@ -34,17 +34,25 @@ export default function EditProfileScreen() {
   const [avatarUri, setAvatarUri] = useState<string | null>(
     (user?.user_metadata?.avatar_url as string) || null,
   );
+  const [bio, setBio] = useState((user?.user_metadata?.bio as string) || '');
+  const [phone, setPhone] = useState(
+    (user?.user_metadata?.phone as string) || '',
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [pendingAvatarUrl, setPendingAvatarUrl] = useState<string | null>(null);
 
   const originalEmail = user?.email || '';
   const originalName = (user?.user_metadata?.full_name as string) || '';
+  const originalBio = (user?.user_metadata?.bio as string) || '';
+  const originalPhone = (user?.user_metadata?.phone as string) || '';
 
   const hasChanges =
     fullName !== originalName ||
     email !== originalEmail ||
-    pendingAvatarUrl !== null;
+    pendingAvatarUrl !== null ||
+    bio !== originalBio ||
+    phone !== originalPhone;
 
   // Pick and upload a new avatar
   const handleChangePhoto = async () => {
@@ -111,13 +119,19 @@ export default function EditProfileScreen() {
 
     setIsSaving(true);
     try {
-      // 1. Update name and avatar via user metadata
+      // 1. Update name, bio, phone, and avatar via user metadata
       const metadata: Record<string, unknown> = {};
       if (fullName !== originalName) {
         metadata.full_name = fullName.trim();
       }
       if (pendingAvatarUrl) {
         metadata.avatar_url = pendingAvatarUrl;
+      }
+      if (bio !== originalBio) {
+        metadata.bio = bio.trim();
+      }
+      if (phone !== originalPhone) {
+        metadata.phone = phone.trim();
       }
       if (Object.keys(metadata).length > 0) {
         await updateUserMetadata(metadata);
@@ -283,6 +297,53 @@ export default function EditProfileScreen() {
                   A confirmation email will be sent to verify the new address.
                 </Text>
               )}
+            </View>
+
+            {/* Bio */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel}>Bio</Text>
+              <View style={styles.inputWrapper}>
+                <Ionicons
+                  name="document-text-outline"
+                  size={20}
+                  color="#9CA3AF"
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={styles.input}
+                  value={bio}
+                  onChangeText={setBio}
+                  placeholder="Tell us about yourself..."
+                  placeholderTextColor="#9CA3AF"
+                  multiline
+                  numberOfLines={3}
+                  maxLength={200}
+                  returnKeyType="done"
+                />
+              </View>
+              <Text style={styles.fieldHint}>{bio.length}/200 characters</Text>
+            </View>
+
+            {/* Phone */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel}>Phone Number</Text>
+              <View style={styles.inputWrapper}>
+                <Ionicons
+                  name="call-outline"
+                  size={20}
+                  color="#9CA3AF"
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={styles.input}
+                  value={phone}
+                  onChangeText={setPhone}
+                  placeholder="Enter your phone number"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="phone-pad"
+                  returnKeyType="done"
+                />
+              </View>
             </View>
 
             {/* Member Since (read-only) */}

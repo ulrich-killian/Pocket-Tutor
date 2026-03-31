@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useAppTheme, type AppColors } from '../src/context/ThemeContext';
 
 export type ProcessingStep =
   | 'uploading'
@@ -60,6 +61,8 @@ export default function ProcessingScreen({
   errorMessage,
 }: ProcessingScreenProps) {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const spinAnim = useRef(new Animated.Value(0)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -153,7 +156,11 @@ export default function ProcessingScreen({
           style={[styles.stepIconActive, { transform: [{ scale: pulseAnim }] }]}
         >
           <View style={styles.stepIconActiveInner}>
-            <Ionicons name="hourglass-outline" size={14} color="#1E3A8A" />
+            <Ionicons
+              name="hourglass-outline"
+              size={14}
+              color={colors.primary}
+            />
           </View>
         </Animated.View>
       );
@@ -165,7 +172,7 @@ export default function ProcessingScreen({
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Ionicons name="arrow-back" size={24} color="#1F2937" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Pocket Tutor</Text>
         <View style={styles.headerSpacer} />
@@ -190,7 +197,7 @@ export default function ProcessingScreen({
                       : 'document-text'
                 }
                 size={40}
-                color={isError ? '#EF4444' : '#1E3A8A'}
+                color={isError ? '#EF4444' : colors.primary}
               />
             </View>
           </Animated.View>
@@ -270,181 +277,182 @@ export default function ProcessingScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingBottom: 16,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  headerSpacer: {
-    width: 40,
-  },
-  content: {
-    flex: 1,
-    alignItems: 'center',
-    paddingHorizontal: 32,
-    paddingTop: 40,
-  },
-  circularContainer: {
-    marginBottom: 32,
-  },
-  circularProgress: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    borderWidth: 4,
-    borderColor: '#1E3A8A',
-    borderTopColor: '#E5E7EB',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  circularInner: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#EEF2FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  fileName: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1F2937',
-    textAlign: 'center',
-    marginBottom: 8,
-    maxWidth: 280,
-  },
-  statusText: {
-    fontSize: 16,
-    color: '#6B7280',
-    marginBottom: 40,
-  },
-  errorText: {
-    fontSize: 14,
-    color: '#EF4444',
-    textAlign: 'center',
-    marginTop: -24,
-    marginBottom: 32,
-    paddingHorizontal: 20,
-  },
-  stepsContainer: {
-    width: '100%',
-    maxWidth: 280,
-  },
-  stepRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    minHeight: 50,
-  },
-  stepIndicator: {
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  stepIconCompleted: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#10B981',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  stepIconActive: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#DBEAFE',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: -2,
-  },
-  stepIconActiveInner: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  stepIconPending: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#E5E7EB',
-  },
-  stepLine: {
-    width: 2,
-    height: 26,
-    backgroundColor: '#E5E7EB',
-    marginTop: 4,
-  },
-  stepLineCompleted: {
-    backgroundColor: '#10B981',
-  },
-  stepLabel: {
-    fontSize: 16,
-    color: '#9CA3AF',
-    paddingTop: 2,
-  },
-  stepLabelCompleted: {
-    color: '#1F2937',
-  },
-  stepLabelActive: {
-    color: '#1F2937',
-    fontWeight: '500',
-  },
-  footer: {
-    paddingHorizontal: 32,
-    paddingBottom: Platform.OS === 'ios' ? 50 : 32,
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 14,
-    color: '#9CA3AF',
-    marginBottom: 16,
-  },
-  progressBarContainer: {
-    width: '60%',
-    height: 4,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-    backgroundColor: '#1E3A8A',
-    borderRadius: 2,
-  },
-  actionButton: {
-    marginTop: 24,
-    backgroundColor: '#1E3A8A',
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 12,
-  },
-  retryButton: {
-    backgroundColor: '#EF4444',
-  },
-  actionButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-});
+const makeStyles = (c: AppColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: c.background,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingTop: Platform.OS === 'ios' ? 60 : 40,
+      paddingBottom: 16,
+    },
+    backButton: {
+      width: 40,
+      height: 40,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    headerTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: c.text,
+    },
+    headerSpacer: {
+      width: 40,
+    },
+    content: {
+      flex: 1,
+      alignItems: 'center',
+      paddingHorizontal: 32,
+      paddingTop: 40,
+    },
+    circularContainer: {
+      marginBottom: 32,
+    },
+    circularProgress: {
+      width: 140,
+      height: 140,
+      borderRadius: 70,
+      borderWidth: 4,
+      borderColor: c.primary,
+      borderTopColor: c.border,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    circularInner: {
+      width: 100,
+      height: 100,
+      borderRadius: 50,
+      backgroundColor: c.primaryLight,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    fileName: {
+      fontSize: 22,
+      fontWeight: '700',
+      color: c.text,
+      textAlign: 'center',
+      marginBottom: 8,
+      maxWidth: 280,
+    },
+    statusText: {
+      fontSize: 16,
+      color: c.textSecondary,
+      marginBottom: 40,
+    },
+    errorText: {
+      fontSize: 14,
+      color: '#EF4444',
+      textAlign: 'center',
+      marginTop: -24,
+      marginBottom: 32,
+      paddingHorizontal: 20,
+    },
+    stepsContainer: {
+      width: '100%',
+      maxWidth: 280,
+    },
+    stepRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      minHeight: 50,
+    },
+    stepIndicator: {
+      alignItems: 'center',
+      marginRight: 16,
+    },
+    stepIconCompleted: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: '#10B981',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    stepIconActive: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: '#DBEAFE',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginLeft: -2,
+    },
+    stepIconActiveInner: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: c.surface,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    stepIconPending: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: c.border,
+    },
+    stepLine: {
+      width: 2,
+      height: 26,
+      backgroundColor: c.border,
+      marginTop: 4,
+    },
+    stepLineCompleted: {
+      backgroundColor: '#10B981',
+    },
+    stepLabel: {
+      fontSize: 16,
+      color: c.textTertiary,
+      paddingTop: 2,
+    },
+    stepLabelCompleted: {
+      color: c.text,
+    },
+    stepLabelActive: {
+      color: c.text,
+      fontWeight: '500',
+    },
+    footer: {
+      paddingHorizontal: 32,
+      paddingBottom: Platform.OS === 'ios' ? 50 : 32,
+      alignItems: 'center',
+    },
+    footerText: {
+      fontSize: 14,
+      color: c.textTertiary,
+      marginBottom: 16,
+    },
+    progressBarContainer: {
+      width: '60%',
+      height: 4,
+      backgroundColor: c.border,
+      borderRadius: 2,
+      overflow: 'hidden',
+    },
+    progressBar: {
+      height: '100%',
+      backgroundColor: c.primary,
+      borderRadius: 2,
+    },
+    actionButton: {
+      marginTop: 24,
+      backgroundColor: c.primary,
+      paddingHorizontal: 32,
+      paddingVertical: 14,
+      borderRadius: 12,
+    },
+    retryButton: {
+      backgroundColor: '#EF4444',
+    },
+    actionButtonText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: '#FFFFFF',
+    },
+  });

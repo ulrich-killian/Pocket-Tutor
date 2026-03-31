@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useAppTheme, type AppColors } from '../src/context/ThemeContext';
 
 interface UploadProgressProps {
   progress: number; // 0 to 100
@@ -17,6 +18,8 @@ export default function UploadProgress({
 }: UploadProgressProps) {
   const animatedWidth = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   useEffect(() => {
     if (isVisible) {
@@ -82,58 +85,59 @@ export default function UploadProgress({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginHorizontal: 20,
-    marginVertical: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  fileInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginRight: 10,
-    gap: 8,
-  },
-  fileName: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#1F2937',
-    flex: 1,
-  },
-  percentage: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#3B82F6',
-  },
-  progressBarContainer: {
-    height: 8,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 4,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  progressBar: {
-    height: '100%',
-    backgroundColor: '#3B82F6',
-    borderRadius: 4,
-  },
-  statusText: {
-    fontSize: 12,
-    color: '#6B7280',
-    textAlign: 'center',
-  },
-});
+const makeStyles = (c: AppColors) =>
+  StyleSheet.create({
+    container: {
+      backgroundColor: c.surface,
+      borderRadius: 12,
+      padding: 16,
+      marginHorizontal: 20,
+      marginVertical: 10,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    fileInfo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+      marginRight: 10,
+      gap: 8,
+    },
+    fileName: {
+      fontSize: 14,
+      fontWeight: '500',
+      color: c.text,
+      flex: 1,
+    },
+    percentage: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: '#3B82F6',
+    },
+    progressBarContainer: {
+      height: 8,
+      backgroundColor: c.border,
+      borderRadius: 4,
+      overflow: 'hidden',
+      marginBottom: 8,
+    },
+    progressBar: {
+      height: '100%',
+      backgroundColor: '#3B82F6',
+      borderRadius: 4,
+    },
+    statusText: {
+      fontSize: 12,
+      color: c.textSecondary,
+      textAlign: 'center',
+    },
+  });

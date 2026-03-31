@@ -1,7 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -22,11 +28,14 @@ import { useDocumentStatus } from '../../src/hooks/useDocumentStatus';
 import { supabase } from '../../src/lib/supabase';
 import { documentService } from '../../src/services/document.service';
 import { Document, DocumentError } from '../../src/types/document';
+import { useAppTheme, type AppColors } from '../../src/context/ThemeContext';
 
 const POLLING_INTERVAL = 5000; // 5 seconds
 
 export default function DocumentsScreenWithStatus() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -306,10 +315,10 @@ export default function DocumentsScreenWithStatus() {
   const Navbar = () => (
     <View style={styles.navbar}>
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-        <Ionicons name="arrow-back" size={24} color="#1E3A8A" />
+        <Ionicons name="arrow-back" size={24} color={colors.primary} />
       </TouchableOpacity>
       <View style={styles.navbarTitle}>
-        <Ionicons name="folder" size={22} color="#1E3A8A" />
+        <Ionicons name="folder" size={22} color={colors.primary} />
         <Text style={styles.navbarTitleText}>My Documents</Text>
       </View>
       <TouchableOpacity
@@ -318,9 +327,9 @@ export default function DocumentsScreenWithStatus() {
         disabled={uploading}
       >
         {uploading ? (
-          <ActivityIndicator size="small" color="#1E3A8A" />
+          <ActivityIndicator size="small" color={colors.primary} />
         ) : (
-          <Ionicons name="add" size={26} color="#1E3A8A" />
+          <Ionicons name="add" size={26} color={colors.primary} />
         )}
       </TouchableOpacity>
     </View>
@@ -330,7 +339,7 @@ export default function DocumentsScreenWithStatus() {
   const EmptyState = () => (
     <View style={styles.emptyContainer}>
       <View style={styles.emptyIconContainer}>
-        <Ionicons name="folder-open-outline" size={64} color="#D1D5DB" />
+        <Ionicons name="folder-open-outline" size={64} color={colors.border} />
       </View>
       <Text style={styles.emptyTitle}>No Documents Yet</Text>
       <Text style={styles.emptySubtitle}>
@@ -359,7 +368,7 @@ export default function DocumentsScreenWithStatus() {
       <View style={styles.container}>
         <Navbar />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#1E3A8A" />
+          <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loadingText}>Loading documents...</Text>
         </View>
       </View>
@@ -387,7 +396,7 @@ export default function DocumentsScreenWithStatus() {
       {documents.length > 0 && !uploading && (
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
-            <Ionicons name="documents" size={20} color="#1E3A8A" />
+            <Ionicons name="documents" size={20} color={colors.primary} />
             <Text style={styles.statValue}>{documents.length}</Text>
             <Text style={styles.statLabel}>Documents</Text>
           </View>
@@ -418,8 +427,8 @@ export default function DocumentsScreenWithStatus() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={['#1E3A8A']}
-            tintColor="#1E3A8A"
+            colors={[colors.primary]}
+            tintColor={colors.primary}
           />
         }
         showsVerticalScrollIndicator={false}
@@ -440,146 +449,147 @@ export default function DocumentsScreenWithStatus() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F3F4F6',
-  },
-  navbar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'ios' ? 50 : 40,
-    paddingBottom: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#EEF2FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  navbarTitle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  navbarTitleText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1E3A8A',
-  },
-  uploadButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#EEF2FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 20,
-    marginTop: 16,
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 4,
-  },
-  statValue: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1F2937',
-  },
-  statLabel: {
-    fontSize: 11,
-    color: '#9CA3AF',
-  },
-  listContainer: {
-    padding: 20,
-    paddingTop: 16,
-  },
-  emptyListContainer: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 16,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#6B7280',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingHorizontal: 40,
-  },
-  emptyIconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#F3F4F6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: '#9CA3AF',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  emptyUploadButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1E3A8A',
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 12,
-    gap: 10,
-  },
-  emptyUploadButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 30,
-    right: 20,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#1E3A8A',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#1E3A8A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-});
+const makeStyles = (c: AppColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: c.background,
+    },
+    navbar: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingTop: Platform.OS === 'ios' ? 50 : 40,
+      paddingBottom: 16,
+      backgroundColor: c.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
+    },
+    backButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: c.primaryLight,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    navbarTitle: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    navbarTitleText: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: c.primary,
+    },
+    uploadButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: c.primaryLight,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    statsContainer: {
+      flexDirection: 'row',
+      backgroundColor: c.surface,
+      marginHorizontal: 20,
+      marginTop: 16,
+      borderRadius: 16,
+      padding: 16,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    statItem: {
+      flex: 1,
+      alignItems: 'center',
+      gap: 4,
+    },
+    statValue: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: c.text,
+    },
+    statLabel: {
+      fontSize: 11,
+      color: c.textTertiary,
+    },
+    listContainer: {
+      padding: 20,
+      paddingTop: 16,
+    },
+    emptyListContainer: {
+      flex: 1,
+      justifyContent: 'center',
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: 16,
+    },
+    loadingText: {
+      fontSize: 16,
+      color: c.textSecondary,
+    },
+    emptyContainer: {
+      alignItems: 'center',
+      paddingHorizontal: 40,
+    },
+    emptyIconContainer: {
+      width: 120,
+      height: 120,
+      borderRadius: 60,
+      backgroundColor: c.surfaceSecondary,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 24,
+    },
+    emptyTitle: {
+      fontSize: 20,
+      fontWeight: '600',
+      color: c.text,
+      marginBottom: 8,
+    },
+    emptySubtitle: {
+      fontSize: 14,
+      color: c.textTertiary,
+      textAlign: 'center',
+      marginBottom: 24,
+    },
+    emptyUploadButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: c.primary,
+      paddingHorizontal: 24,
+      paddingVertical: 14,
+      borderRadius: 12,
+      gap: 10,
+    },
+    emptyUploadButtonText: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    fab: {
+      position: 'absolute',
+      bottom: 30,
+      right: 20,
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      backgroundColor: c.primary,
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowColor: c.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 8,
+    },
+  });

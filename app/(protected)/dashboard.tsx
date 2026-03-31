@@ -10,11 +10,13 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
+import { useAuth } from '../../src/hooks/useAuth';
 
 const { width } = Dimensions.get('window');
 
 export default function Dashboard() {
   const router = useRouter();
+  const { user } = useAuth();
 
   // Get time-based greeting
   const getGreeting = () => {
@@ -113,15 +115,6 @@ export default function Dashboard() {
       route: '/chat',
     },
     {
-      id: '3',
-      icon: 'albums' as keyof typeof Ionicons.glyphMap,
-      title: 'Flashcards',
-      description: 'Create & study cards',
-      color: '#10B981',
-      bgColor: '#ECFDF5',
-      route: '/flashcards',
-    },
-    {
       id: '4',
       icon: 'document-text' as keyof typeof Ionicons.glyphMap,
       title: 'Quiz',
@@ -163,37 +156,6 @@ export default function Dashboard() {
       progress: 88,
       lessons: '11/12 lessons',
       color: '#F59E0B',
-    },
-  ];
-
-  const quickActions = [
-    {
-      id: '1',
-      icon: 'book' as keyof typeof Ionicons.glyphMap,
-      label: 'Flashcards',
-      value: '12',
-      color: '#10B981',
-    },
-    {
-      id: '2',
-      icon: 'document' as keyof typeof Ionicons.glyphMap,
-      label: 'Quizzes',
-      value: '5',
-      color: '#F59E0B',
-    },
-    {
-      id: '3',
-      icon: 'chatbubble' as keyof typeof Ionicons.glyphMap,
-      label: 'Chats',
-      value: '8',
-      color: '#4F46E5',
-    },
-    {
-      id: '4',
-      icon: 'time' as keyof typeof Ionicons.glyphMap,
-      label: 'Hours',
-      value: '24',
-      color: '#EC4899',
     },
   ];
 
@@ -241,183 +203,21 @@ export default function Dashboard() {
               <Text style={styles.userName}>Welcome back!</Text>
             </View>
             <View style={styles.headerRight}>
-              <TouchableOpacity style={styles.searchButton}>
-                <Ionicons name="search" size={22} color="#FFFFFF" />
-              </TouchableOpacity>
               <TouchableOpacity
                 style={styles.notificationButton}
                 onPress={() => router.push('/profile' as any)}
               >
-                <Ionicons name="person" size={24} color="#FFFFFF" />
+                {user?.user_metadata?.avatar_url ? (
+                  <Image
+                    source={{ uri: user.user_metadata.avatar_url }}
+                    style={{ width: 44, height: 44, borderRadius: 22 }}
+                  />
+                ) : (
+                  <Ionicons name="person" size={24} color="#FFFFFF" />
+                )}
               </TouchableOpacity>
             </View>
           </View>
-
-          {/* Search Bar */}
-          <View style={styles.searchContainer}>
-            <Ionicons name="search" size={18} color="#9CA3AF" />
-            <Text style={styles.searchPlaceholder}>
-              Search courses, documents...
-            </Text>
-          </View>
-
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <View style={styles.statIconContainer}>
-                <MaterialIcons name="style" size={18} color="#4F46E5" />
-              </View>
-              <View>
-                <Text style={styles.statNumber}>12</Text>
-                <Text style={styles.headerStatLabel}>Flashcards</Text>
-              </View>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <View
-                style={[
-                  styles.statIconContainer,
-                  { backgroundColor: '#FFFBEB' },
-                ]}
-              >
-                <Ionicons name="document-text" size={18} color="#F59E0B" />
-              </View>
-              <View>
-                <Text style={styles.statNumber}>5</Text>
-                <Text style={styles.headerStatLabel}>Quizzes</Text>
-              </View>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <View
-                style={[
-                  styles.statIconContainer,
-                  { backgroundColor: '#ECFDF5' },
-                ]}
-              >
-                <Ionicons name="time" size={18} color="#10B981" />
-              </View>
-              <View>
-                <Text style={styles.statNumber}>8h</Text>
-                <Text style={styles.headerStatLabel}>Study Time</Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Streak Card */}
-          <View style={styles.streakContainer}>
-            <View style={styles.streakLeft}>
-              <View style={styles.streakBadge}>
-                <Ionicons name="flame" size={16} color="#F59E0B" />
-              </View>
-              <View>
-                <Text style={styles.streakTitle}>5 Day Streak!</Text>
-                <Text style={styles.streakSubtitle}>Keep it up</Text>
-              </View>
-            </View>
-            <View style={styles.streakProgress}>
-              <View style={styles.streakDays}>
-                {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
-                  <View
-                    key={i}
-                    style={[styles.streakDay, i < 5 && styles.streakDayActive]}
-                  >
-                    <Text
-                      style={[
-                        styles.streakDayText,
-                        i < 5 && styles.streakDayTextActive,
-                      ]}
-                    >
-                      {day}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* Welcome Card */}
-        <View style={styles.welcomeCard}>
-          <View style={styles.welcomeCardOverlay} />
-          <View style={styles.welcomeContent}>
-            <View style={styles.welcomeBadge}>
-              <Ionicons name="sparkles" size={12} color="#1E3A8A" />
-              <Text style={styles.welcomeBadgeText}>AI Powered</Text>
-            </View>
-            <Text style={styles.welcomeTitle}>Ready to learn?</Text>
-            <Text style={styles.welcomeSubtitle}>
-              Continue your learning journey where you left off
-            </Text>
-            <TouchableOpacity
-              style={styles.continueButton}
-              onPress={() => router.push('/chat' as any)}
-              activeOpacity={0.8}
-            >
-              <View style={styles.continueButtonContent}>
-                <Text style={styles.continueButtonText}>Continue Learning</Text>
-                <View style={styles.continueButtonIcon}>
-                  <Ionicons name="arrow-forward" size={16} color="#1E3A8A" />
-                </View>
-              </View>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.welcomeRight}>
-            <View style={styles.welcomeIconContainer}>
-              <FontAwesome5 name="graduation-cap" size={44} color="#FFFFFF" />
-            </View>
-            <View style={styles.welcomeDecoCircle1} />
-            <View style={styles.welcomeDecoCircle2} />
-          </View>
-        </View>
-
-        {/* Learning Paths */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>My Courses</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.courseScroll}
-          >
-            {courses.map((course) => (
-              <TouchableOpacity
-                key={course.id}
-                style={styles.courseCard}
-                activeOpacity={0.8}
-              >
-                <View
-                  style={[
-                    styles.courseHeader,
-                    { backgroundColor: course.color },
-                  ]}
-                >
-                  <FontAwesome5 name="book-open" size={20} color="#FFFFFF" />
-                </View>
-                <View style={styles.courseContent}>
-                  <Text style={styles.courseTitle} numberOfLines={1}>
-                    {course.title}
-                  </Text>
-                  <Text style={styles.courseLessons}>{course.lessons}</Text>
-                  <View style={styles.progressContainer}>
-                    <View style={styles.progressBar}>
-                      <View
-                        style={[
-                          styles.progressFill,
-                          {
-                            width: `${course.progress}%`,
-                            backgroundColor: course.color,
-                          },
-                        ]}
-                      />
-                    </View>
-                    <Text style={styles.progressText}>{course.progress}%</Text>
-                  </View>
-                </View>
-                <View style={styles.courseAction}>
-                  <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
         </View>
 
         {/* Quick Actions Grid */}
@@ -455,7 +255,7 @@ export default function Dashboard() {
           </View>
         </View>
 
-        {/* Recent Activity */}
+        {/* Learning Paths */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent Activity</Text>
@@ -576,29 +376,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
   },
-  searchButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginTop: 16,
-    gap: 10,
-  },
-  searchPlaceholder: {
-    flex: 1,
-    fontSize: 14,
-    color: '#93C5FD',
-  },
   statIconContainer: {
     width: 36,
     height: 36,
@@ -607,64 +384,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
-  },
-  streakContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    marginTop: 16,
-  },
-  streakLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  streakBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(245, 158, 11, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  streakTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  streakSubtitle: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.7)',
-  },
-  streakProgress: {
-    alignItems: 'flex-end',
-  },
-  streakDays: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  streakDay: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  streakDayActive: {
-    backgroundColor: '#F59E0B',
-  },
-  streakDayText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.5)',
-  },
-  streakDayTextActive: {
-    color: '#FFFFFF',
   },
   notificationBadge: {
     position: 'absolute',

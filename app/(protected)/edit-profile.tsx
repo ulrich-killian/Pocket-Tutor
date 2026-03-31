@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../src/hooks/useAuth';
 import { supabase } from '../../src/lib/supabase';
+import { useAppTheme, type AppColors } from '../../src/context/ThemeContext';
 
 const CLOUDINARY_CLOUD_NAME =
   process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME || '';
@@ -26,6 +27,8 @@ const CLOUDINARY_UPLOAD_PRESET =
 export default function EditProfileScreen() {
   const router = useRouter();
   const { user, updateUserMetadata } = useAuth();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const [fullName, setFullName] = useState(
     (user?.user_metadata?.full_name as string) || '',
@@ -383,177 +386,178 @@ export default function EditProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 56 : 44,
-    paddingBottom: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  headerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F1F5F9',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1F2937',
-  },
-  saveButton: {
-    backgroundColor: '#1E3A8A',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 12,
-    minWidth: 70,
-    alignItems: 'center',
-  },
-  saveButtonDisabled: {
-    backgroundColor: '#93C5FD',
-  },
-  saveButtonText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
-  },
+const makeStyles = (c: AppColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: c.background,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingTop: Platform.OS === 'ios' ? 56 : 44,
+      paddingBottom: 12,
+      paddingHorizontal: 16,
+      backgroundColor: c.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: c.borderLight,
+    },
+    headerButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: c.borderLight,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    headerTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: c.text,
+    },
+    saveButton: {
+      backgroundColor: c.primary,
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 12,
+      minWidth: 70,
+      alignItems: 'center',
+    },
+    saveButtonDisabled: {
+      backgroundColor: '#93C5FD',
+    },
+    saveButtonText: {
+      color: '#FFFFFF',
+      fontSize: 15,
+      fontWeight: '600',
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      padding: 20,
+      paddingBottom: 40,
+    },
 
-  // Avatar
-  avatarSection: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  avatarWrapper: {
-    position: 'relative',
-    marginBottom: 12,
-  },
-  avatar: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    borderWidth: 4,
-    borderColor: '#FFFFFF',
-  },
-  avatarPlaceholder: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    backgroundColor: '#1E3A8A',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 4,
-    borderColor: '#FFFFFF',
-  },
-  avatarText: {
-    fontSize: 40,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  avatarOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    borderRadius: 55,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  changePhotoButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#EEF2FF',
-  },
-  changePhotoText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1E3A8A',
-  },
+    // Avatar
+    avatarSection: {
+      alignItems: 'center',
+      marginBottom: 32,
+    },
+    avatarWrapper: {
+      position: 'relative',
+      marginBottom: 12,
+    },
+    avatar: {
+      width: 110,
+      height: 110,
+      borderRadius: 55,
+      borderWidth: 4,
+      borderColor: c.surface,
+    },
+    avatarPlaceholder: {
+      width: 110,
+      height: 110,
+      borderRadius: 55,
+      backgroundColor: c.primary,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 4,
+      borderColor: c.surface,
+    },
+    avatarText: {
+      fontSize: 40,
+      fontWeight: '700',
+      color: '#FFFFFF',
+    },
+    avatarOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(0,0,0,0.4)',
+      borderRadius: 55,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    changePhotoButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 20,
+      backgroundColor: c.primaryLight,
+    },
+    changePhotoText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: c.primary,
+    },
 
-  // Form
-  formSection: {
-    gap: 20,
-    marginBottom: 24,
-  },
-  fieldContainer: {
-    gap: 8,
-  },
-  fieldLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-    marginLeft: 4,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-    paddingHorizontal: 14,
-    paddingVertical: Platform.OS === 'ios' ? 14 : 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  inputIcon: {
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: '#1F2937',
-  },
-  inputDisabled: {
-    backgroundColor: '#F8FAFC',
-    borderColor: '#F1F5F9',
-  },
-  inputDisabledText: {
-    flex: 1,
-    fontSize: 16,
-    color: '#9CA3AF',
-  },
-  fieldHint: {
-    fontSize: 12,
-    color: '#F59E0B',
-    marginLeft: 4,
-  },
+    // Form
+    formSection: {
+      gap: 20,
+      marginBottom: 24,
+    },
+    fieldContainer: {
+      gap: 8,
+    },
+    fieldLabel: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: c.text,
+      marginLeft: 4,
+    },
+    inputWrapper: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: c.inputBg,
+      borderRadius: 14,
+      borderWidth: 1.5,
+      borderColor: c.inputBorder,
+      paddingHorizontal: 14,
+      paddingVertical: Platform.OS === 'ios' ? 14 : 10,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.03,
+      shadowRadius: 4,
+      elevation: 1,
+    },
+    inputIcon: {
+      marginRight: 10,
+    },
+    input: {
+      flex: 1,
+      fontSize: 16,
+      color: c.inputText,
+    },
+    inputDisabled: {
+      backgroundColor: c.surfaceSecondary,
+      borderColor: c.borderLight,
+    },
+    inputDisabledText: {
+      flex: 1,
+      fontSize: 16,
+      color: c.textTertiary,
+    },
+    fieldHint: {
+      fontSize: 12,
+      color: '#F59E0B',
+      marginLeft: 4,
+    },
 
-  // Info
-  infoCard: {
-    flexDirection: 'row',
-    backgroundColor: '#EFF6FF',
-    borderRadius: 14,
-    padding: 16,
-    gap: 10,
-    alignItems: 'flex-start',
-  },
-  infoText: {
-    flex: 1,
-    fontSize: 13,
-    color: '#1E40AF',
-    lineHeight: 20,
-  },
-});
+    // Info
+    infoCard: {
+      flexDirection: 'row',
+      backgroundColor: c.primaryLight,
+      borderRadius: 14,
+      padding: 16,
+      gap: 10,
+      alignItems: 'flex-start',
+    },
+    infoText: {
+      flex: 1,
+      fontSize: 13,
+      color: c.primary,
+      lineHeight: 20,
+    },
+  });

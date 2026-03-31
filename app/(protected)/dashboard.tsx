@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,12 +11,15 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useAuth } from '../../src/hooks/useAuth';
+import { useAppTheme, type AppColors } from '../../src/context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
 export default function Dashboard() {
   const router = useRouter();
   const { user } = useAuth();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   // Get time-based greeting
   const getGreeting = () => {
@@ -80,12 +83,15 @@ export default function Dashboard() {
           <Ionicons
             name={activeTab === tab.id ? tab.activeIcon : tab.icon}
             size={24}
-            color={activeTab === tab.id ? '#1E3A8A' : '#9CA3AF'}
+            color={activeTab === tab.id ? colors.tabActive : colors.tabInactive}
           />
           <Text
             style={[
               styles.tabLabel,
-              { color: activeTab === tab.id ? '#1E3A8A' : '#9CA3AF' },
+              {
+                color:
+                  activeTab === tab.id ? colors.tabActive : colors.tabInactive,
+              },
             ]}
           >
             {tab.name}

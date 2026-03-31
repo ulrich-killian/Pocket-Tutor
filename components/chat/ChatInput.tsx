@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useAppTheme, type AppColors } from '../../src/context/ThemeContext';
 
 interface ChatInputProps {
   onSend: (text: string) => void;
@@ -17,6 +18,8 @@ interface ChatInputProps {
 const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
   const [input, setInput] = useState<string>('');
   const [isFocused, setIsFocused] = useState(false);
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const handleSend = (): void => {
     if (!input.trim()) return;
@@ -63,56 +66,57 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    gap: 10,
-  },
-  inputWrapper: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    maxHeight: 120,
-  },
-  inputFocused: {
-    borderColor: '#6366F1',
-    backgroundColor: '#FFFFFF',
-  },
-  input: {
-    fontSize: 15,
-    lineHeight: 20,
-    color: '#111827',
-    maxHeight: 100,
-    padding: 0,
-  },
-  sendButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sendButtonActive: {
-    backgroundColor: '#4F46E5',
-    shadowColor: '#4F46E5',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  sendButtonDisabled: {
-    backgroundColor: '#E5E7EB',
-  },
-});
+const makeStyles = (c: AppColors) =>
+  StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      backgroundColor: c.surface,
+      borderTopWidth: 1,
+      borderTopColor: c.border,
+      gap: 10,
+    },
+    inputWrapper: {
+      flex: 1,
+      backgroundColor: c.surfaceSecondary,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: c.border,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      maxHeight: 120,
+    },
+    inputFocused: {
+      borderColor: '#6366F1',
+      backgroundColor: c.inputBg,
+    },
+    input: {
+      fontSize: 15,
+      lineHeight: 20,
+      color: c.inputText,
+      maxHeight: 100,
+      padding: 0,
+    },
+    sendButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    sendButtonActive: {
+      backgroundColor: '#4F46E5',
+      shadowColor: '#4F46E5',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    sendButtonDisabled: {
+      backgroundColor: c.skeleton,
+    },
+  });
 
 export default ChatInput;

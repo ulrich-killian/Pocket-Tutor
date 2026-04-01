@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../src/hooks/useAuth';
 import { useAppTheme, type AppColors } from '../../src/context/ThemeContext';
+import { useNotificationStore } from '../../src/store/notificationStore';
 
 const CLOUDINARY_CLOUD_NAME =
   process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME || '';
@@ -36,10 +37,28 @@ export default function Profile() {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [localAvatarUri, setLocalAvatarUri] = useState<string | null>(null);
 
-  // Settings states
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [emailNotificationsEnabled, setEmailNotificationsEnabled] =
-    useState(true);
+  // Notification state from Zustand store
+  const {
+    pushEnabled: notificationsEnabled,
+    emailEnabled: emailNotificationsEnabled,
+    togglePushNotifications,
+    toggleEmailNotifications,
+    initialize: initNotifications,
+  } = useNotificationStore();
+
+  // Initialize notifications when user is available
+  useEffect(() => {
+    if (user?.id) {
+      initNotifications(user.id);
+    }
+  }, [user?.id]);
+
+  const setNotificationsEnabled = (enabled: boolean) => {
+    if (user?.id) togglePushNotifications(user.id, enabled);
+  };
+  const setEmailNotificationsEnabled = (enabled: boolean) => {
+    if (user?.id) toggleEmailNotifications(user.id, enabled);
+  };
 
   // Get user initials for avatar placeholder
   const getUserInitials = () => {
@@ -309,8 +328,7 @@ export default function Profile() {
       subtitle: 'Manage your privacy settings',
       color: '#EF4444',
       bgColor: '#FEF2F2',
-      onPress: () =>
-        Alert.alert('Privacy & Security', 'Privacy settings coming soon!'),
+      onPress: () => router.push('/(protected)/privacy-security'),
     },
     {
       id: '7',

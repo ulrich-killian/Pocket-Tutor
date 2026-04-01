@@ -34,6 +34,7 @@ export interface AppColors {
   // Misc
   skeleton: string;
   divider: string;
+  card: string;
 }
 
 export const lightColors: AppColors = {
@@ -59,6 +60,7 @@ export const lightColors: AppColors = {
   primaryLight: '#EEF2FF',
   skeleton: '#E5E7EB',
   divider: '#F3F4F6',
+  card: '#FFFFFF',
 };
 
 export const darkColors: AppColors = {
@@ -84,6 +86,7 @@ export const darkColors: AppColors = {
   primaryLight: '#1E3A5A',
   skeleton: '#334155',
   divider: '#1E293B',
+  card: '#1E293B',
 };
 
 interface ThemeContextValue {

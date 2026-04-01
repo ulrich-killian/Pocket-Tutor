@@ -9,28 +9,21 @@ import {
   Dimensions,
   Alert,
   Animated,
+  ActivityIndicator,
 } from 'react-native';
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import { useAppTheme, type AppColors } from '../../src/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
+import {
+  generateFlashcards,
+  getFlashcardsByDocument,
+  getAllUserFlashcards,
+} from '../../src/services/flashcard.service';
+import type { Flashcard, FlashcardDeck } from '../../src/types/flashcard.type';
+import { useAuth } from '../../src/context/AuthContext';
 
 const { width } = Dimensions.get('window');
-
-interface Flashcard {
-  id: string;
-  term: string;
-  definition: string;
-}
-
-interface FlashcardDeck {
-  id: string;
-  title: string;
-  subject: string;
-  cards: Flashcard[];
-  color: string;
-  lastStudied?: string;
-}
 
 const deckColors = [
   '#4F46E5',
@@ -45,37 +38,11 @@ export default function FlashcardsScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { user } = useAuth();
 
-  const [decks, setDecks] = useState<FlashcardDeck[]>([
-    {
-      id: '1',
-      title: 'Mathematics Formulas',
-      subject: 'Math',
-      color: '#4F46E5',
-      cards: [
-        {
-          id: '1',
-          term: 'Quadratic Formula',
-          definition: 'x = (-b ± √(b²-4ac)) / 2a',
-        },
-        { id: '2', term: 'Pythagorean Theorem', definition: 'a² + b² = c²' },
-        { id: '3', term: 'Area of Circle', definition: 'πr²' },
-      ],
-      lastStudied: '2 hours ago',
-    },
-    {
-      id: '2',
-      title: 'Chemistry Periodic Table',
-      subject: 'Chemistry',
-      color: '#10B981',
-      cards: [
-        { id: '1', term: 'Hydrogen', definition: 'H - Atomic #: 1' },
-        { id: '2', term: 'Helium', definition: 'He - Atomic #: 2' },
-        { id: '3', term: 'Carbon', definition: 'C - Atomic #: 6' },
-      ],
-      lastStudied: 'Yesterday',
-    },
-  ]);
+  const [decks, setDecks] = useState<FlashcardDeck[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAddCardModal, setShowAddCardModal] = useState(false);
@@ -90,6 +57,93 @@ export default function FlashcardsScreen() {
   const [deckToAddCards, setDeckToAddCards] = useState<FlashcardDeck | null>(
     null,
   );
+
+  // Load flashcards on mount
+  useEffect(() => {
+    const loadFlashcards = async () => {
+      try {
+        setIsLoading(true);
+        if (!user?.id) {
+          // No user, just show empty state
+          setDecks([]);
+          return;
+        }
+        const flashcards = await getAllUserFlashcards(user.id);
+
+        // Group flashcards by documentId into decks
+        const grouped = flashcards.reduce(
+          (acc, card) => {
+            const docId = card.documentId || 'local';
+            if (!acc[docId]) {
+              acc[docId] = {
+                id: docId,
+                title: `Deck ${Object.keys(acc).length + 1}`,
+                subject: 'General',
+                color: deckColors[Object.keys(acc).length % deckColors.length],
+                cards: [],
+                documentId: docId,
+                userId: user.id,
+              };
+            }
+            acc[docId].cards.push(card);
+            return acc;
+          },
+          {} as Record<string, FlashcardDeck>,
+        );
+
+        setDecks(Object.values(grouped));
+      } catch (error) {
+        console.error('Error loading flashcards:', error);
+        setDecks([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadFlashcards();
+  }, [user?.id]);
+
+  const handleGenerateFromDocument = async (documentId: string) => {
+    if (!user?.id) return;
+
+    try {
+      setIsGenerating(true);
+      const newCards = await generateFlashcards({
+        documentId,
+        userId: user.id,
+      });
+
+      // Add new cards to the deck
+      setDecks((prevDecks) => {
+        const existingDeck = prevDecks.find((d) => d.documentId === documentId);
+        if (existingDeck) {
+          return prevDecks.map((d) =>
+            d.documentId === documentId
+              ? { ...d, cards: [...d.cards, ...newCards] }
+              : d,
+          );
+        }
+        // Create new deck
+        const newDeck: FlashcardDeck = {
+          id: documentId,
+          title: 'Generated Flashcards',
+          subject: 'From Document',
+          color: deckColors[prevDecks.length % deckColors.length],
+          cards: newCards,
+          documentId,
+          userId: user.id,
+        };
+        return [...prevDecks, newDeck];
+      });
+
+      Alert.alert('Success', `Generated ${newCards.length} flashcards!`);
+    } catch (error) {
+      console.error('Error generating flashcards:', error);
+      Alert.alert('Error', 'Failed to generate flashcards. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const flipAnim = useRef(new Animated.Value(0)).current;
 
@@ -137,8 +191,9 @@ export default function FlashcardsScreen() {
 
     const newCard: Flashcard = {
       id: Date.now().toString(),
-      term: newCardTerm,
-      definition: newCardDefinition,
+      front: newCardTerm,
+      back: newCardDefinition,
+      documentId: deckToAddCards.documentId || '',
     };
 
     const updatedDecks = decks.map((deck) => {
@@ -266,15 +321,13 @@ export default function FlashcardsScreen() {
               {!isFlipped ? (
                 <View style={styles.cardFront}>
                   <Text style={styles.cardLabel}>TERM</Text>
-                  <Text style={styles.cardTerm}>{currentCard.term}</Text>
+                  <Text style={styles.cardTerm}>{currentCard.front}</Text>
                   <Text style={styles.tapHint}>Tap to flip</Text>
                 </View>
               ) : (
                 <View style={styles.cardBack}>
                   <Text style={styles.cardLabel}>DEFINITION</Text>
-                  <Text style={styles.cardDefinition}>
-                    {currentCard.definition}
-                  </Text>
+                  <Text style={styles.cardDefinition}>{currentCard.back}</Text>
                   <Text style={styles.tapHint}>Tap to flip back</Text>
                 </View>
               )}

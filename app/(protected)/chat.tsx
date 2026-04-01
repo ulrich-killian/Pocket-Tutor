@@ -107,7 +107,9 @@ export default function ChatScreen(): React.JSX.Element {
 
         <View style={styles.headerCenter}>
           <View style={styles.headerTitleRow}>
-            <Ionicons name="sparkles" size={16} color="#6366F1" />
+            <View style={styles.headerLogoCircle}>
+              <Text style={styles.headerLogoText}>PT</Text>
+            </View>
             <Text style={styles.headerTitle}>AI Tutor</Text>
           </View>
           <Text style={styles.headerSubtitle} numberOfLines={1}>
@@ -224,6 +226,19 @@ const makeStyles = (c: AppColors) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: 6,
+    },
+    headerLogoCircle: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: '#1E3A8A',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    headerLogoText: {
+      fontSize: 10,
+      fontWeight: '900',
+      color: '#FFFFFF',
     },
     headerTitle: {
       fontSize: 17,

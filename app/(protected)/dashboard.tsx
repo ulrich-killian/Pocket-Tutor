@@ -45,7 +45,7 @@ export default function Dashboard() {
       name: 'Study',
       icon: 'book-outline' as keyof typeof Ionicons.glyphMap,
       activeIcon: 'book' as keyof typeof Ionicons.glyphMap,
-      route: '/chat',
+      route: '/study',
     },
     {
       id: 'flashcards',
@@ -174,6 +174,7 @@ export default function Dashboard() {
       icon: 'document-text' as keyof typeof Ionicons.glyphMap,
       iconColor: '#F59E0B',
       iconBg: '#FFFBEB',
+      route: '/quiz',
     },
     {
       id: '2',
@@ -183,6 +184,7 @@ export default function Dashboard() {
       icon: 'albums' as keyof typeof Ionicons.glyphMap,
       iconColor: '#10B981',
       iconBg: '#ECFDF5',
+      route: '/flashcards',
     },
     {
       id: '3',
@@ -192,8 +194,13 @@ export default function Dashboard() {
       icon: 'chatbubbles' as keyof typeof Ionicons.glyphMap,
       iconColor: '#4F46E5',
       iconBg: '#EEF2FF',
+      route: '/chat',
     },
   ];
+
+  const handleActivityPress = (route: string) => {
+    router.push(route as any);
+  };
 
   return (
     <View style={styles.container}>
@@ -265,13 +272,17 @@ export default function Dashboard() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent Activity</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/documents')}>
               <Text style={styles.seeAllText}>See All</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.activityCard}>
             {recentActivity.map((activity, index) => (
-              <View key={activity.id}>
+              <TouchableOpacity
+                key={activity.id}
+                onPress={() => handleActivityPress(activity.route)}
+                activeOpacity={0.7}
+              >
                 <View style={styles.activityItem}>
                   <View
                     style={[
@@ -296,7 +307,7 @@ export default function Dashboard() {
                 {index < recentActivity.length - 1 && (
                   <View style={styles.activityDivider} />
                 )}
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
         </View>

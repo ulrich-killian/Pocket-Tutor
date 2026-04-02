@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -57,6 +57,24 @@ export default function EditProfileScreen() {
     bio !== originalBio ||
     phone !== originalPhone;
 
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user?.id) return;
+      const { data } = await supabase
+        .from('profiles')
+        .select('full_name, bio, phone')
+        .eq('id', user.id)
+        .single();
+
+      if (data) {
+        setFullName(data.full_name || '');
+        setBio(data.bio || '');
+        setPhone(data.phone || '');
+      }
+    };
+    fetchProfile();
+  }, [user?.id]);
+
   // Pick and upload a new avatar
   const handleChangePhoto = async () => {
     try {
@@ -114,33 +132,45 @@ export default function EditProfileScreen() {
   };
 
   // Save all changes
+  const validateCameroonPhone = (phone: string): boolean => {
+    return /^6\d{8}$/.test(phone.replace(/\s/g, ''));
+  };
+
   const handleSave = async () => {
     if (!hasChanges) {
       router.back();
       return;
     }
 
+    if (phone && !validateCameroonPhone(phone)) {
+      Alert.alert(
+        'Invalid Phone',
+        'Enter a valid Cameroon number e.g. 677123456',
+      );
+      return;
+    }
+
     setIsSaving(true);
     try {
-      // 1. Update name, bio, phone, and avatar via user metadata
+      // 1. Update profiles table directly
+      const { error: profileError } = await supabase.from('profiles').upsert({
+        id: user?.id,
+        full_name: fullName.trim(),
+        bio: bio.trim(),
+        phone: phone.trim(),
+      });
+
+      if (profileError) throw new Error(profileError.message);
+
+      // 2. Update auth metadata for avatar
       const metadata: Record<string, unknown> = {};
-      if (fullName !== originalName) {
-        metadata.full_name = fullName.trim();
-      }
-      if (pendingAvatarUrl) {
-        metadata.avatar_url = pendingAvatarUrl;
-      }
-      if (bio !== originalBio) {
-        metadata.bio = bio.trim();
-      }
-      if (phone !== originalPhone) {
-        metadata.phone = phone.trim();
-      }
+      if (pendingAvatarUrl) metadata.avatar_url = pendingAvatarUrl;
+      if (fullName !== originalName) metadata.full_name = fullName.trim();
       if (Object.keys(metadata).length > 0) {
         await updateUserMetadata(metadata);
       }
 
-      // 2. Update email if changed (Supabase sends confirmation)
+      // 3. Update email if changed
       if (email.trim() !== originalEmail) {
         const { error } = await supabase.auth.updateUser({
           email: email.trim(),
@@ -148,7 +178,7 @@ export default function EditProfileScreen() {
         if (error) throw new Error(error.message);
         Alert.alert(
           'Confirm Email',
-          'A confirmation link has been sent to your new email address. Please verify it to complete the change.',
+          'A confirmation link has been sent to your new email address.',
           [{ text: 'OK', onPress: () => router.back() }],
         );
         return;
@@ -212,7 +242,7 @@ export default function EditProfileScreen() {
             <View style={styles.avatarWrapper}>
               {avatarUri ? (
                 <Image
-                  source={{ uri: avatarUri }}
+                  source={{ uri: avatarUri || undefined }}
                   style={styles.avatar}
                   key={avatarUri}
                 />

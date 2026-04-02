@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppTheme, type AppColors } from '../context/ThemeContext';
+import { supabase } from '../lib';
 
 const { width } = Dimensions.get('window');
 
@@ -87,16 +88,26 @@ export default function OnboardingScreen({
     }
   };
 
-  const handleContinue = () => {
-    // Save onboarding data (you can integrate with your backend later)
-    console.log('Onboarding data:', {
-      category: category === 'Others' ? categoryOther : category,
+  const handleContinue = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    const { error } = await supabase.from('profiles').upsert({
+      id: user.id,
+      academic_system: category === 'Others' ? categoryOther : category,
       topic: topic === 'Others' ? topicOther : topic,
-      studyHours,
-      learningStyle,
+      study_hours: studyHours,
+      learning_style: learningStyle,
     });
 
-    // Navigate to dashboard
+    if (error) {
+      console.error('Failed to save profile:', error.message);
+      return;
+    }
+
     router.replace('/(protected)/dashboard');
   };
 

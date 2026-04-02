@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Document } from '../src/types/document';
+import { useAppTheme, type AppColors } from '../src/context/ThemeContext';
 
 interface DocumentCardProps {
   document: Document;
@@ -62,6 +63,9 @@ export default function DocumentCard({
   onDelete,
   onPress,
 }: DocumentCardProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
   const fileName = document.title;
   const iconName = getFileIcon(fileName) as keyof typeof Ionicons.glyphMap;
   const iconColor = getFileIconColor(fileName);
@@ -145,70 +149,71 @@ export default function DocumentCard({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  iconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-  },
-  content: {
-    flex: 1,
-    marginRight: 10,
-  },
-  name: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 4,
-  },
-  metadata: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  metadataText: {
-    fontSize: 12,
-    color: '#9CA3AF',
-  },
-  metadataDot: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    marginHorizontal: 6,
-  },
-  typeTag: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#F3F4F6',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  typeText: {
-    fontSize: 11,
-    color: '#6B7280',
-    fontWeight: '500',
-  },
-  deleteButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: '#FEF2F2',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
+const makeStyles = (c: AppColors) =>
+  StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: c.surface,
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 12,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    iconContainer: {
+      width: 50,
+      height: 50,
+      borderRadius: 12,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 14,
+    },
+    content: {
+      flex: 1,
+      marginRight: 10,
+    },
+    name: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: c.text,
+      marginBottom: 4,
+    },
+    metadata: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 6,
+    },
+    metadataText: {
+      fontSize: 12,
+      color: c.textTertiary,
+    },
+    metadataDot: {
+      fontSize: 12,
+      color: c.textTertiary,
+      marginHorizontal: 6,
+    },
+    typeTag: {
+      alignSelf: 'flex-start',
+      backgroundColor: c.surfaceSecondary,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 6,
+    },
+    typeText: {
+      fontSize: 11,
+      color: c.textSecondary,
+      fontWeight: '500',
+    },
+    deleteButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 10,
+      backgroundColor: '#FEF2F2',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+  });

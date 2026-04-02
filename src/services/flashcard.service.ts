@@ -1,61 +1,16 @@
-// services/flashcard.service.ts
-
 import api from './api';
-import type {
-  Flashcard,
-  GenerateFlashcardsPayload,
-  GenerateFlashcardsResponse,
-  GetFlashcardsResponse,
-} from '../types/flashcard.type';
+import { Flashcard, GenerateFlashcardsRequest } from '../types/flashcard';
 
-/**
- * Generate flashcards from a document using AI.
- *
- * @example
- * const flashcards = await generateFlashcards({
- *   documentId: 'cc2b20ff-...',
- *   userId: 'db677394-...',
- * });
- */
-export async function generateFlashcards(
-  payload: GenerateFlashcardsPayload,
-): Promise<Flashcard[]> {
-  const response = await api.post<GenerateFlashcardsResponse>(
-    '/flashcards/generate',
-    {
-      documentId: payload.documentId,
-      userId: payload.userId,
-    },
-  );
-  return response.data.flashcards;
-}
+export const generateFlashcards = async (
+  payload: GenerateFlashcardsRequest,
+): Promise<Flashcard[]> => {
+  const response = await api.post<Flashcard[]>('/flashcards/generate', payload);
+  return response.data;
+};
 
-/**
- * Get flashcards for a specific document.
- *
- * @example
- * const flashcards = await getFlashcardsByDocument('cc2b20ff-...');
- */
-export async function getFlashcardsByDocument(
+export const getFlashcardsByDocument = async (
   documentId: string,
-): Promise<Flashcard[]> {
-  const response = await api.get<GetFlashcardsResponse>(
-    `/flashcards/${documentId}`,
-  );
-  return response.data.flashcards;
-}
-
-/**
- * Get all flashcards for a user.
- *
- * @example
- * const allFlashcards = await getAllUserFlashcards('db677394-...');
- */
-export async function getAllUserFlashcards(
-  userId: string,
-): Promise<Flashcard[]> {
-  const response = await api.get<GetFlashcardsResponse>(
-    `/flashcards/user/${userId}`,
-  );
-  return response.data.flashcards;
-}
+): Promise<Flashcard[]> => {
+  const response = await api.get<Flashcard[]>(`/flashcards/${documentId}`);
+  return response.data;
+};

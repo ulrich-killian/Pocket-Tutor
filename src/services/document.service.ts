@@ -1,5 +1,6 @@
 import api from './api';
 import { Document, UploadResponse, DocumentError } from '../types/document';
+import { Platform } from 'react-native';
 
 export const documentService = {
   async uploadDocument(
@@ -17,16 +18,16 @@ export const documentService = {
       formData.append('userId', userId);
       formData.append('title', title);
 
-      // For React Native, we need to append the file as a proper object
-      formData.append('file', {
-        uri: file.uri,
-        name: file.name || 'upload.pdf',
-        type: file.type || 'application/pdf',
-      } as any);
-
-      // Use fetch instead of axios for more reliable file uploads in React Native
-      const url = `${api.defaults.baseURL}/documents/upload`;
-      console.log('Full URL:', url);
+      if (Platform.OS === 'web') {
+        const blob = await uriToBlob(file.uri);
+        formData.append('file', blob, file.name || 'upload.pdf');
+      } else {
+        formData.append('file', {
+          uri: file.uri,
+          name: file.name || 'upload.pdf',
+          type: file.type || 'application/octet-stream',
+        } as any);
+      }
 
       const response = await api.post('/documents/upload', formData, {
         headers: {
@@ -144,3 +145,8 @@ export const documentService = {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   },
 };
+async function uriToBlob(uri: string): Promise<Blob> {
+  const response = await fetch(uri);
+  const blob = await response.blob();
+  return blob;
+}

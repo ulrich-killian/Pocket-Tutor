@@ -1018,7 +1018,7 @@ const makeStyles = (c: AppColors) =>
     questionText: {
       fontSize: 17,
       fontWeight: '600',
-      color: c.text,
+      color: c.primary,
       lineHeight: 26,
     },
     optionsContainer: {

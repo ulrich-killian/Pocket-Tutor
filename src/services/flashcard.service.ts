@@ -70,6 +70,7 @@ function transformFlashcard(card: SupabaseFlashcard): Flashcard {
     document_id: card.document_id,
     user_id: card.user_id,
     created_at: card.created_at,
+    // Ensure camelCase versions exist for consistent grouping
     documentId: card.document_id,
     userId: card.user_id,
     createdAt: card.created_at,

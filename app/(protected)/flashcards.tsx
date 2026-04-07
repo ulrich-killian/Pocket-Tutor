@@ -96,9 +96,19 @@ export default function FlashcardsScreen() {
         );
 
         // Group flashcards by document_id into decks
+        console.log('=== DEBUG ===');
+        console.log(
+          'Documents:',
+          docs.map((d) => ({ id: d.id, title: d.title })),
+        );
+        console.log('Flashcards count:', flashcards.length);
+        console.log('Sample card:', flashcards[0]);
+
         const grouped = flashcards.reduce(
           (acc, card) => {
-            const docId = card.document_id || 'local';
+            // Support both snake_case and camelCase, ensure consistent
+            const docId = card.document_id || card.documentId || 'unknown';
+            console.log('Card docId:', docId, 'card:', card);
             if (!acc[docId]) {
               // Use document title if available, otherwise use default
               const title = docTitleMap[docId]
@@ -361,137 +371,119 @@ export default function FlashcardsScreen() {
 
         {/* Flashcard */}
         <View style={[styles.cardContainer, { minHeight: cardHeight }]}>
-          <TouchableOpacity
-            style={[styles.flashcard, { height: cardHeight }]}
-            onPress={flipCard}
-            activeOpacity={0.95}
-          >
-            {/* Front Card */}
-            <Animated.View
-              style={[
-                styles.flashcardInner,
-                styles.cardFrontInner,
-                {
-                  opacity: flipAnim.interpolate({
-                    inputRange: [0, 0.5, 0.5, 1],
-                    outputRange: [1, 1, 0, 0],
-                  }),
-                  transform: [
-                    {
-                      scale: flipAnim.interpolate({
-                        inputRange: [0, 0.5, 1],
-                        outputRange: [1, 1, 0.9],
-                      }),
-                    },
-                  ],
-                },
-              ]}
-            >
-              <View style={styles.cardContentWrapper}>
-                {/* Header with Label */}
-                <View style={styles.cardHeaderSection}>
-                  <View style={styles.labelContainer}>
-                    <MaterialCommunityIcons
-                      name="lightbulb-outline"
-                      size={14}
-                      color={colors.primary}
-                    />
-                    <Text style={styles.cardLabel}>TERM</Text>
+          <TouchableWithoutFeedback onPress={flipCard}>
+            <Animated.View style={[styles.flashcard, { height: cardHeight }]}>
+              {/* Front Card - Visible when not flipped */}
+              <Animated.View
+                style={[
+                  styles.cardSide,
+                  styles.cardFrontInner,
+                  {
+                    opacity: flipAnim.interpolate({
+                      inputRange: [0, 0.5],
+                      outputRange: [1, 0],
+                    }),
+                  },
+                ]}
+              >
+                <View style={styles.cardContentWrapper}>
+                  {/* Header with Label */}
+                  <View style={styles.cardHeaderSection}>
+                    <View style={styles.labelContainer}>
+                      <MaterialCommunityIcons
+                        name="lightbulb-outline"
+                        size={14}
+                        color={colors.primary}
+                      />
+                      <Text style={styles.cardLabel}>TERM</Text>
+                    </View>
+                  </View>
+
+                  {/* Main Content - Centered */}
+                  <View style={styles.cardMainContent}>
+                    <ScrollView
+                      style={styles.cardScrollContent}
+                      contentContainerStyle={styles.cardScrollContentContainer}
+                      showsVerticalScrollIndicator={false}
+                      centerContent={true}
+                    >
+                      <Text style={styles.cardTerm}>{currentCard.front}</Text>
+                    </ScrollView>
+                  </View>
+
+                  {/* Footer with Tap Hint */}
+                  <View style={styles.cardFooterSection}>
+                    <View style={styles.tapHintContainer}>
+                      <MaterialCommunityIcons
+                        name="hand-pointing-up"
+                        size={12}
+                        color={colors.textSecondary}
+                      />
+                      <Text style={styles.tapHint}>Tap to flip</Text>
+                    </View>
                   </View>
                 </View>
+              </Animated.View>
 
-                {/* Main Content - Centered */}
-                <View style={styles.cardMainContent}>
-                  <ScrollView
-                    style={styles.cardScrollContent}
-                    contentContainerStyle={styles.cardScrollContentContainer}
-                    showsVerticalScrollIndicator={false}
-                    centerContent={true}
-                  >
-                    <Text style={styles.cardTerm}>{currentCard.front}</Text>
-                  </ScrollView>
-                </View>
+              {/* Back Card - Visible when flipped */}
+              <Animated.View
+                style={[
+                  styles.cardSide,
+                  styles.cardBackInner,
+                  {
+                    opacity: flipAnim.interpolate({
+                      inputRange: [0.5, 1],
+                      outputRange: [0, 1],
+                    }),
+                  },
+                ]}
+              >
+                <View style={styles.cardContentWrapper}>
+                  {/* Header with Label */}
+                  <View style={styles.cardHeaderSection}>
+                    <View
+                      style={[styles.labelContainer, styles.labelContainerBack]}
+                    >
+                      <MaterialCommunityIcons
+                        name="book-open-variant"
+                        size={14}
+                        color="#FFFFFF"
+                      />
+                      <Text style={[styles.cardLabel, styles.cardLabelBack]}>
+                        DEFINITION
+                      </Text>
+                    </View>
+                  </View>
 
-                {/* Footer with Tap Hint */}
-                <View style={styles.cardFooterSection}>
-                  <View style={styles.tapHintContainer}>
-                    <MaterialCommunityIcons
-                      name="hand-pointing-up"
-                      size={12}
-                      color={colors.textSecondary}
-                    />
-                    <Text style={styles.tapHint}>Tap to flip</Text>
+                  {/* Main Content - Centered */}
+                  <View style={styles.cardMainContent}>
+                    <ScrollView
+                      style={styles.cardScrollContent}
+                      contentContainerStyle={styles.cardScrollContentContainer}
+                      showsVerticalScrollIndicator={false}
+                      centerContent={true}
+                    >
+                      <Text style={styles.cardDefinition}>
+                        {currentCard.back}
+                      </Text>
+                    </ScrollView>
+                  </View>
+
+                  {/* Footer with Tap Hint */}
+                  <View style={styles.cardFooterSection}>
+                    <View style={styles.tapHintContainerBack}>
+                      <MaterialCommunityIcons
+                        name="gesture-tap"
+                        size={12}
+                        color="rgba(255,255,255,0.6)"
+                      />
+                      <Text style={styles.tapHintBack}>Tap to flip back</Text>
+                    </View>
                   </View>
                 </View>
-              </View>
+              </Animated.View>
             </Animated.View>
-
-            {/* Back Card */}
-            <Animated.View
-              style={[
-                styles.flashcardInner,
-                styles.cardBackInner,
-                {
-                  opacity: flipAnim.interpolate({
-                    inputRange: [0, 0.5, 0.5, 1],
-                    outputRange: [0, 0, 1, 1],
-                  }),
-                  transform: [
-                    {
-                      scale: flipAnim.interpolate({
-                        inputRange: [0, 0.5, 1],
-                        outputRange: [0.9, 1, 1],
-                      }),
-                    },
-                  ],
-                },
-              ]}
-            >
-              <View style={styles.cardContentWrapper}>
-                {/* Header with Label */}
-                <View style={styles.cardHeaderSection}>
-                  <View
-                    style={[styles.labelContainer, styles.labelContainerBack]}
-                  >
-                    <MaterialCommunityIcons
-                      name="book-open-variant"
-                      size={14}
-                      color="#FFFFFF"
-                    />
-                    <Text style={[styles.cardLabel, styles.cardLabelBack]}>
-                      DEFINITION
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Main Content - Centered */}
-                <View style={styles.cardMainContent}>
-                  <ScrollView
-                    style={styles.cardScrollContent}
-                    contentContainerStyle={styles.cardScrollContentContainer}
-                    showsVerticalScrollIndicator={false}
-                    centerContent={true}
-                  >
-                    <Text style={styles.cardDefinition}>
-                      {currentCard.back}
-                    </Text>
-                  </ScrollView>
-                </View>
-
-                {/* Footer with Tap Hint */}
-                <View style={styles.cardFooterSection}>
-                  <View style={styles.tapHintContainerBack}>
-                    <MaterialCommunityIcons
-                      name="gesture-tap"
-                      size={12}
-                      color="rgba(255,255,255,0.6)"
-                    />
-                    <Text style={styles.tapHintBack}>Tap to flip back</Text>
-                  </View>
-                </View>
-              </View>
-            </Animated.View>
-          </TouchableOpacity>
+          </TouchableWithoutFeedback>
         </View>
 
         {/* Navigation */}
@@ -978,8 +970,9 @@ const makeStyles = (c: AppColors) =>
     },
     header: {
       paddingHorizontal: 16,
-      paddingTop: 8,
+      paddingTop: 20,
       paddingBottom: 16,
+      marginTop: 20,
     },
     headerTop: {
       flexDirection: 'row',
@@ -1632,6 +1625,7 @@ const makeStyles = (c: AppColors) =>
     cardContainer: {
       flex: 1,
       paddingHorizontal: 20,
+      paddingTop: 16,
       justifyContent: 'center',
     },
     flashcard: {
@@ -1652,6 +1646,9 @@ const makeStyles = (c: AppColors) =>
       position: 'absolute',
       width: '100%',
       height: '100%',
+    },
+    cardSide: {
+      ...StyleSheet.absoluteFillObject,
     },
     cardFrontInner: {
       flex: 1,

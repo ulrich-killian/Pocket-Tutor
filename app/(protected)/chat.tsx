@@ -31,10 +31,8 @@ export default function ChatScreen(): React.JSX.Element {
   const userId = user?.id;
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
-  // Get document title from params for header
   const documentTitle = (params.title as string) || 'Document';
 
-  // Don't proceed if no user or document
   if (!userId || !documentId) {
     return (
       <View style={styles.errorContainer}>
@@ -81,7 +79,6 @@ export default function ChatScreen(): React.JSX.Element {
 
   const keyExtractor = (item: ChatMessage): string => item.id;
 
-  // Check if this is a new chat (no messages yet)
   const isNewChat = messages.length === 0;
 
   return (

@@ -31,9 +31,11 @@ export default function ChatScreen(): React.JSX.Element {
   const userId = user?.id;
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
-  const documentTitle = (params.title as string) || 'Document';
+  const documentTitle =
+    (params.title as string) || (documentId ? 'Document' : 'Free Chat');
 
-  if (!userId || !documentId) {
+  // With this:
+  if (!userId) {
     return (
       <View style={styles.errorContainer}>
         <StatusBar
@@ -41,16 +43,10 @@ export default function ChatScreen(): React.JSX.Element {
           backgroundColor={colors.surface}
         />
         <View style={styles.errorIconContainer}>
-          <Ionicons name="document-text-outline" size={64} color="#9CA3AF" />
+          <Ionicons name="person-outline" size={64} color="#9CA3AF" />
         </View>
-        <Text style={styles.errorTitle}>
-          {!userId ? 'Sign In Required' : 'No Document Selected'}
-        </Text>
-        <Text style={styles.errorText}>
-          {!userId
-            ? 'Please sign in to chat with your documents'
-            : 'Select a document to start chatting'}
-        </Text>
+        <Text style={styles.errorTitle}>Sign In Required</Text>
+        <Text style={styles.errorText}>Please sign in to start chatting</Text>
         <TouchableOpacity
           style={styles.errorButton}
           onPress={() => router.back()}

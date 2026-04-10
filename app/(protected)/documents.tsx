@@ -72,6 +72,34 @@ export default function DocumentsScreen() {
   };
 
   const handleSelectFile = async () => {
+    if (Platform.OS === 'web') {
+      // Web fallback
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.pdf,.doc,.docx,.txt,.png,.jpg,.jpeg';
+
+      input.onchange = (e: Event) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (!file) return;
+
+        if (file.size > 20 * 1024 * 1024) {
+          Alert.alert('File Too Large', 'Maximum file size is 20MB');
+          return;
+        }
+
+        setSelectedFile({
+          uri: URL.createObjectURL(file),
+          name: file.name,
+          type: file.type || 'application/octet-stream',
+          size: file.size,
+        });
+      };
+
+      input.click();
+      return; // 👈 stops here on web, doesn't touch DocumentPicker
+    }
+
+    // ✅ Your existing mobile code stays exactly as is below
     try {
       const mimeTypes = getMimeTypeForFileType(selectedType || undefined);
 
@@ -86,7 +114,6 @@ export default function DocumentsScreen() {
 
       const file = result.assets[0];
 
-      // Check file size (max 20MB)
       if (file.size && file.size > 20 * 1024 * 1024) {
         Alert.alert('File Too Large', 'Maximum file size is 20MB');
         return;

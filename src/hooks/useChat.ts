@@ -12,8 +12,8 @@ interface UseChatReturn {
 }
 
 export const useChat = (
-  userId: string, // Changed from sessionId to userId
-  documentId: string, // Changed to required since you're passing it
+  userId: string,
+  documentId?: string, // Made optional to support Free Chat
 ): UseChatReturn => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -21,6 +21,8 @@ export const useChat = (
 
   const send = useCallback(
     async (text: string): Promise<void> => {
+      if (!text.trim()) return;
+
       const userMessage: ChatMessage = {
         id: randomUUID(),
         role: 'user',
@@ -28,28 +30,37 @@ export const useChat = (
         timestamp: new Date(),
       };
 
-      setMessages((prev) => [...prev, userMessage]);
+      // 1. Update local state immediately for UI responsiveness
+      const currentMessages = [...messages, userMessage];
+      setMessages(currentMessages);
       setLoading(true);
       setError(null);
 
       try {
-        console.log(
-          '📨 Sending message with userId:',
-          userId,
-          'documentId:',
-          documentId,
-        );
+        // 2. Prepare the history for the AI (excluding the latest message we just added)
+        // We map our ChatMessage type to the expected {role, content} format
+        const chatHistory = messages.map((msg) => ({
+          role: msg.role as 'user' | 'assistant',
+          content: msg.content,
+        }));
 
-        const response = await sendMessage({
-          message: text,
-          documentId: documentId,
-          userId: userId, // Use the userId passed to the hook
-        });
+        // 3. Call service with Hybrid Logic
+        // If we have a documentId, we can use 'strict' or 'free' mode.
+        // Using 'free' mode here allows the AI to be more conversational.
+        const response = await sendMessage(
+          {
+            message: text,
+            documentId: documentId,
+            userId: userId,
+            history: chatHistory, // Now the AI has memory!
+          },
+          documentId ? 'strict' : 'free',
+        );
 
         const aiMessage: ChatMessage = {
           id: randomUUID(),
           role: 'assistant',
-          content: response.answer, // Changed from response.reply to response.answer
+          content: response.answer,
           sources: response.sources,
           modelUsed: response.modelUsed,
           timestamp: new Date(),
@@ -59,13 +70,12 @@ export const useChat = (
       } catch (err: unknown) {
         const message =
           err instanceof Error ? err.message : 'Something went wrong';
-        console.error('Chat error:', message);
         setError(message);
       } finally {
         setLoading(false);
       }
     },
-    [userId, documentId], // Updated dependencies
+    [userId, documentId, messages], // Added messages to dependencies so history stays updated
   );
 
   const clearError = useCallback((): void => setError(null), []);

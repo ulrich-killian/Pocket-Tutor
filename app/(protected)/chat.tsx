@@ -2,7 +2,6 @@ import React, { useRef, useEffect, useMemo } from 'react';
 import {
   View,
   FlatList,
-  ActivityIndicator,
   Text,
   StyleSheet,
   KeyboardAvoidingView,
@@ -10,7 +9,11 @@ import {
   ListRenderItemInfo,
   TouchableOpacity,
   StatusBar,
+  Keyboard,
+  Alert,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useChat } from '../../src/hooks/useChat';
@@ -20,20 +23,24 @@ import ChatInput from '../../components/chat/ChatInput';
 import AIThinking from '../../components/chat/AIThinking';
 import type { ChatMessage } from '../../src/types/chat.types';
 import { useAppTheme, type AppColors } from '../../src/context/ThemeContext';
+import { documentService } from '../../src/services/document.service';
 
 export default function ChatScreen(): React.JSX.Element {
   const router = useRouter();
   const params = useLocalSearchParams();
   const documentId = params.documentId as string;
+  const isFreeChat = !documentId;
   const { user } = useAuth();
   const { colors, isDark } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const userId = user?.id;
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
-  const documentTitle = (params.title as string) || 'Document';
+  const documentTitle =
+    (params.title as string) || (documentId ? 'Document' : 'Free Chat');
 
-  if (!userId || !documentId) {
+  // With this:
+  if (!userId) {
     return (
       <View style={styles.errorContainer}>
         <StatusBar
@@ -41,16 +48,10 @@ export default function ChatScreen(): React.JSX.Element {
           backgroundColor={colors.surface}
         />
         <View style={styles.errorIconContainer}>
-          <Ionicons name="document-text-outline" size={64} color="#9CA3AF" />
+          <Ionicons name="person-outline" size={64} color="#9CA3AF" />
         </View>
-        <Text style={styles.errorTitle}>
-          {!userId ? 'Sign In Required' : 'No Document Selected'}
-        </Text>
-        <Text style={styles.errorText}>
-          {!userId
-            ? 'Please sign in to chat with your documents'
-            : 'Select a document to start chatting'}
-        </Text>
+        <Text style={styles.errorTitle}>Sign In Required</Text>
+        <Text style={styles.errorText}>Please sign in to start chatting</Text>
         <TouchableOpacity
           style={styles.errorButton}
           onPress={() => router.back()}
@@ -61,6 +62,7 @@ export default function ChatScreen(): React.JSX.Element {
     );
   }
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const { messages, send, loading, error } = useChat(userId, documentId);
 
   const handleSend = async (text: string): Promise<void> => {
@@ -80,6 +82,97 @@ export default function ChatScreen(): React.JSX.Element {
   const keyExtractor = (item: ChatMessage): string => item.id;
 
   const isNewChat = messages.length === 0;
+
+  // ... inside ChatScreen component ...
+
+  const processUpload = async (asset: any) => {
+    try {
+      const file = {
+        uri: asset.uri,
+        name: asset.name || `upload_${Date.now()}.jpg`,
+        type: asset.mimeType || 'image/jpeg',
+      };
+
+      const title = asset.name || 'Chat Attachment';
+
+      console.log('Using documentService to upload...');
+
+      // 3. Call your existing service
+      const response = await documentService.uploadDocument(
+        userId,
+        file,
+        title,
+      );
+
+      if (response && response.data?.id) {
+        router.setParams({
+          documentId: response.data.id,
+          title: file.name,
+        });
+
+        Alert.alert('Success', 'File processed!');
+
+        // Small delay to let the hook pick up the new documentId param
+        setTimeout(() => {
+          handleSend(
+            "I've uploaded this file. What can you tell me about the text inside?",
+          );
+        }, 500);
+      }
+    } catch (err: any) {
+      Alert.alert('Upload Failed', err.message);
+    }
+  };
+
+  const handleCameraPress = async () => {
+    Keyboard.dismiss();
+    setTimeout(() => {
+      Alert.alert('Upload Notes', 'Choose source:', [
+        {
+          text: 'Camera',
+          onPress: async () => {
+            const { status } =
+              await ImagePicker.requestCameraPermissionsAsync();
+            if (status === 'granted') {
+              const result = await ImagePicker.launchCameraAsync({
+                allowsEditing: true,
+                quality: 0.7,
+              });
+              if (!result.canceled) processUpload(result.assets[0]);
+            }
+          },
+        },
+        {
+          text: 'Gallery',
+          onPress: async () => {
+            const { status } =
+              await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status === 'granted') {
+              const result = await ImagePicker.launchImageLibraryAsync({
+                allowsEditing: true,
+                quality: 0.7,
+              });
+              if (!result.canceled) processUpload(result.assets[0]);
+            }
+          },
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+    }, 100);
+  };
+
+  const handleFilePress = async () => {
+    const result = await DocumentPicker.getDocumentAsync({
+      type: [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      ],
+    });
+    if (!result.canceled) processUpload(result.assets[0]);
+  };
+
+  // ... rest of the component ...
 
   return (
     <KeyboardAvoidingView
@@ -109,8 +202,10 @@ export default function ChatScreen(): React.JSX.Element {
             </View>
             <Text style={styles.headerTitle}>AI Tutor</Text>
           </View>
+
+          {/* UPDATE THIS LINE BELOW */}
           <Text style={styles.headerSubtitle} numberOfLines={1}>
-            {documentTitle}
+            {!documentId ? 'Your Personal Academic Mentor' : documentTitle}
           </Text>
         </View>
 
@@ -139,31 +234,73 @@ export default function ChatScreen(): React.JSX.Element {
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <View style={styles.emptyIconContainer}>
-              <Ionicons name="chatbubbles-outline" size={48} color="#6366F1" />
+              <Ionicons
+                name={isFreeChat ? 'sparkles-outline' : 'chatbubbles-outline'}
+                size={48}
+                color="#6366F1"
+              />
             </View>
-            <Text style={styles.emptyTitle}>Start Learning</Text>
-            <Text style={styles.emptyText}>
-              Ask me anything about your document. I can help you understand
-              concepts, summarize content, or answer questions.
+            <Text style={styles.emptyTitle}>
+              {isFreeChat ? "Hi, I'm Pocket Tutor!" : 'Start Learning'}
             </Text>
+            <Text style={styles.emptyText}>
+              {isFreeChat
+                ? "I'm your academic mentor. Ask me anything about school, life, or career—no documents needed!"
+                : 'Ask me anything about your document. I can help you understand concepts, summarize content, or answer questions.'}
+            </Text>
+
             <View style={styles.suggestionsContainer}>
               <Text style={styles.suggestionsTitle}>Try asking:</Text>
               <View style={styles.suggestionsList}>
-                <View style={styles.suggestionChip}>
-                  <Text style={styles.suggestionText}>
-                    Summarize this document
-                  </Text>
-                </View>
-                <View style={styles.suggestionChip}>
-                  <Text style={styles.suggestionText}>
-                    Explain key concepts
-                  </Text>
-                </View>
-                <View style={styles.suggestionChip}>
-                  <Text style={styles.suggestionText}>
-                    What are the main points?
-                  </Text>
-                </View>
+                {isFreeChat ? (
+                  <>
+                    <TouchableOpacity
+                      onPress={() =>
+                        handleSend(
+                          'Explain how the ecosystem works in Cameroon',
+                        )
+                      }
+                    >
+                      <View style={styles.suggestionChip}>
+                        <Text style={styles.suggestionText}>
+                          Ecosystems in Cameroon
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() =>
+                        handleSend('Give me a study plan for my exams')
+                      }
+                    >
+                      <View style={styles.suggestionChip}>
+                        <Text style={styles.suggestionText}>
+                          Create a study plan
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  <>
+                    <TouchableOpacity
+                      onPress={() => handleSend('Summarize this document')}
+                    >
+                      <View style={styles.suggestionChip}>
+                        <Text style={styles.suggestionText}>
+                          Summarize notes
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => handleSend('Explain key concepts')}
+                    >
+                      <View style={styles.suggestionChip}>
+                        <Text style={styles.suggestionText}>
+                          Explain concepts
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  </>
+                )}
               </View>
             </View>
           </View>
@@ -185,7 +322,12 @@ export default function ChatScreen(): React.JSX.Element {
       )}
 
       {/* Input */}
-      <ChatInput onSend={handleSend} disabled={loading} />
+      <ChatInput
+        onSend={handleSend}
+        onCameraPress={handleCameraPress}
+        onFilePress={handleFilePress}
+        disabled={loading}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -398,3 +540,6 @@ const makeStyles = (c: AppColors) =>
       fontWeight: '600',
     },
   });
+function uploadDocument(arg0: ImagePicker.ImagePickerAsset) {
+  throw new Error('Function not implemented.');
+}

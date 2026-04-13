@@ -6,16 +6,24 @@ import {
   TouchableOpacity,
   StyleSheet,
   Keyboard,
+  GestureResponderEvent,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme, type AppColors } from '../../src/context/ThemeContext';
 
 interface ChatInputProps {
   onSend: (text: string) => void;
+  onFilePress: () => void;
+  onCameraPress: () => void;
   disabled: boolean;
 }
 
-const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
+const ChatInput: React.FC<ChatInputProps> = ({
+  onSend,
+  onFilePress,
+  onCameraPress,
+  disabled,
+}) => {
   const [input, setInput] = useState<string>('');
   const [isFocused, setIsFocused] = useState(false);
   const { colors } = useAppTheme();
@@ -32,6 +40,26 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
 
   return (
     <View style={styles.container}>
+      <View style={styles.attachmentContainer}>
+        {/* STEP 3: Ensure onPress points to the prop onCameraPress */}
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={onCameraPress}
+          disabled={disabled}
+        >
+          <Ionicons name="camera-outline" size={24} color="#6366F1" />
+        </TouchableOpacity>
+
+        {/* STEP 4: Ensure onPress points to the prop onFilePress */}
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={onFilePress}
+          disabled={disabled}
+        >
+          <Ionicons name="document-attach-outline" size={24} color="#6366F1" />
+        </TouchableOpacity>
+      </View>
+
       <View style={[styles.inputWrapper, isFocused && styles.inputFocused]}>
         <TextInput
           style={styles.input}
@@ -71,12 +99,23 @@ const makeStyles = (c: AppColors) =>
     container: {
       flexDirection: 'row',
       alignItems: 'flex-end',
-      paddingHorizontal: 16,
+      paddingHorizontal: 12, // Reduced padding to fit more icons
       paddingVertical: 12,
       backgroundColor: c.surface,
       borderTopWidth: 1,
       borderTopColor: c.border,
-      gap: 10,
+      gap: 8,
+    },
+    attachmentContainer: {
+      flexDirection: 'row',
+      gap: 4,
+      paddingBottom: 4, // Align icons slightly better with the input
+    },
+    iconButton: {
+      width: 40,
+      height: 40,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     inputWrapper: {
       flex: 1,
@@ -84,8 +123,8 @@ const makeStyles = (c: AppColors) =>
       borderRadius: 20,
       borderWidth: 1,
       borderColor: c.border,
-      paddingHorizontal: 16,
-      paddingVertical: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
       maxHeight: 120,
     },
     inputFocused: {
@@ -108,15 +147,9 @@ const makeStyles = (c: AppColors) =>
     },
     sendButtonActive: {
       backgroundColor: '#4F46E5',
-      shadowColor: '#4F46E5',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.3,
-      shadowRadius: 4,
-      elevation: 3,
     },
     sendButtonDisabled: {
       backgroundColor: c.skeleton,
     },
   });
-
 export default ChatInput;

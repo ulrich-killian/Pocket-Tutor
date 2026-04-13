@@ -9,7 +9,6 @@ export const documentService = {
     title: string,
   ): Promise<UploadResponse> {
     try {
-      console.log('--- Upload Start ---');
       console.log('Target URL:', `${api.defaults.baseURL}/documents/upload`);
       console.log('FILE:', file);
 
@@ -35,11 +34,9 @@ export const documentService = {
         },
       });
 
-      // For axios, response.data contains the data directly
       console.log('Upload success:', response.data);
       return response.data;
     } catch (err: any) {
-      // Log detailed error information for debugging
       console.error('=== Upload Error Debug ===');
       console.error('Error name:', err.name);
       console.error('Error message:', err.message);
@@ -47,9 +44,7 @@ export const documentService = {
       console.error('Is Axios Error:', err.isAxiosError);
       console.error('Response:', err.response?.data);
       console.error('Status:', err.response?.status);
-      console.error('=========================');
 
-      // Provide more helpful error messages
       let errorMessage = 'Upload failed. Please try again.';
 
       if (err.code === 'ECONNABORTED') {

@@ -9,7 +9,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/hooks/useAuth';
 import { useAppTheme, type AppColors } from '../../src/context/ThemeContext';
 
@@ -101,6 +101,18 @@ export default function Dashboard() {
     </View>
   );
 
+  // Get user display name
+  const getUserName = () => {
+    if (user?.user_metadata?.full_name) {
+      return user.user_metadata.full_name;
+    }
+    if (user?.email) {
+      return user.email.split('@')[0];
+    }
+    return 'Student';
+  };
+
+  // Stats data - in real app, fetch from API
   const features = [
     {
       id: '1',
@@ -213,27 +225,30 @@ export default function Dashboard() {
           <View style={styles.headerTop}>
             <View style={styles.headerTextContainer}>
               <Text style={styles.greeting}>{getGreeting()} 👋</Text>
-              <Text style={styles.userName}>Welcome back!</Text>
+              <Text style={styles.userName}>{getUserName()}</Text>
+              <Text style={styles.appTagline}>
+                Your AI-powered study companion 📚
+              </Text>
             </View>
-            <View style={styles.headerRight}>
-              <TouchableOpacity
-                style={styles.notificationButton}
-                onPress={() => router.push('/profile' as any)}
-              >
-                {user?.user_metadata?.avatar_url ? (
-                  <Image
-                    source={{ uri: user.user_metadata.avatar_url }}
-                    style={{ width: 44, height: 44, borderRadius: 22 }}
-                  />
-                ) : (
-                  <Ionicons name="person" size={24} color="#FFFFFF" />
-                )}
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              style={styles.notificationButton}
+              onPress={() => router.push('/profile' as any)}
+            >
+              {user?.user_metadata?.avatar_url ? (
+                <Image
+                  source={{ uri: user.user_metadata.avatar_url }}
+                  style={{ width: 44, height: 44, borderRadius: 22 }}
+                />
+              ) : (
+                <View style={styles.avatarPlaceholder}>
+                  <Ionicons name="person" size={22} color={colors.primary} />
+                </View>
+              )}
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Quick Actions Grid */}
+        {/* Quick Actions */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.featuresGrid}>
@@ -454,10 +469,24 @@ const makeStyles = (c: AppColors) =>
       marginBottom: 4,
       fontWeight: '500',
     },
+    avatarPlaceholder: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: '#FFFFFF',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
     userName: {
       fontSize: 26,
       fontWeight: '700',
       color: '#FFFFFF',
+    },
+    appTagline: {
+      fontSize: 14,
+      color: 'rgba(255, 255, 255, 0.85)',
+      marginTop: 6,
+      fontWeight: '400',
     },
     profileButton: {
       width: 48,

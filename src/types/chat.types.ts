@@ -15,6 +15,7 @@ export interface ChatMessage {
 }
 
 export interface SendMessagePayload {
+  history: any;
   message: string;
   documentId: string;
   userId: string;

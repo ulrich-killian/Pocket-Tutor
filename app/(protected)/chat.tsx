@@ -65,9 +65,9 @@ export default function ChatScreen(): React.JSX.Element {
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const { messages, send, loading, error } = useChat(userId, documentId);
 
-  const handleSend = async (text: string): Promise<void> => {
-    if (!text.trim()) return;
-    await send(text);
+  const handleSend = async (text: string, image?: string): Promise<void> => {
+    if (!text.trim() && !image) return;
+    await send(text, image);
     setTimeout(() => {
       listRef.current?.scrollToEnd({ animated: true });
     }, 100);

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Image } from 'react-native';
 import type { ChatMessage } from '../../src/types/chat.types';
 import { useAppTheme, type AppColors } from '../../src/context/ThemeContext';
 
@@ -51,6 +51,9 @@ export default function ChatBubble({ message }: ChatBubbleProps) {
             isUser ? styles.userBubble : styles.assistantBubble,
           ]}
         >
+          {message.image && (
+            <Image source={{ uri: message.image }} style={styles.image} />
+          )}
           <Text
             style={[
               styles.text,
@@ -174,6 +177,12 @@ const makeStyles = (c: AppColors) =>
     text: {
       fontSize: 15,
       lineHeight: 22,
+    },
+    image: {
+      width: '100%',
+      height: 150,
+      borderRadius: 12,
+      marginBottom: 8,
     },
     userText: {
       color: '#FFFFFF',

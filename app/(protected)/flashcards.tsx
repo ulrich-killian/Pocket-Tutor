@@ -25,6 +25,7 @@ import {
   getAllUserFlashcards,
 } from '../../src/services/flashcard.service';
 import { documentService } from '../../src/services/document.service';
+import { createActivity } from '../../src/services/history.service';
 import type { Flashcard, FlashcardDeck } from '../../src/types/flashcard.type';
 import type { Document } from '../../src/types/document';
 import type { Document as DocType } from '../../src/types/document';
@@ -86,53 +87,41 @@ export default function FlashcardsScreen() {
 
         setDocuments(docs);
 
-        // Create a map of documentId -> document title
-        const docTitleMap = docs.reduce(
-          (acc, doc) => {
-            acc[doc.id] = doc.title;
-            return acc;
-          },
-          {} as Record<string, string>,
-        );
+        // Create decks from documents first
+        const docDecks: Record<string, FlashcardDeck> = {};
+        docs.forEach((doc) => {
+          docDecks[doc.id] = {
+            id: doc.id,
+            title: doc.title,
+            subject: 'From Document',
+            color: deckColors[Object.keys(docDecks).length % deckColors.length],
+            cards: [],
+            documentId: doc.id,
+            userId: user.id,
+          };
+        });
 
-        // Group flashcards by document_id into decks
-        console.log('=== DEBUG ===');
-        console.log(
-          'Documents:',
-          docs.map((d) => ({ id: d.id, title: d.title })),
-        );
-        console.log('Flashcards count:', flashcards.length);
-        console.log('Sample card:', flashcards[0]);
+        // Group flashcards by document_id into existing document decks
+        flashcards.forEach((card) => {
+          const docId = card.document_id || card.documentId;
+          if (docId && docDecks[docId]) {
+            docDecks[docId].cards.push(card);
+          } else if (docId) {
+            const doc = docs.find((d) => d.id === docId);
+            docDecks[docId] = {
+              id: docId,
+              title: doc ? `${doc.title} Flashcards` : 'Generated Flashcards',
+              subject: 'From Document',
+              color:
+                deckColors[Object.keys(docDecks).length % deckColors.length],
+              cards: [card],
+              documentId: docId,
+              userId: user.id,
+            };
+          }
+        });
 
-        const grouped = flashcards.reduce(
-          (acc, card) => {
-            // Support both snake_case and camelCase, ensure consistent
-            const docId = card.document_id || card.documentId || 'unknown';
-            console.log('Card docId:', docId, 'card:', card);
-            if (!acc[docId]) {
-              // Use document title if available, otherwise use default
-              const title = docTitleMap[docId]
-                ? `${docTitleMap[docId]} Flashcards`
-                : 'Custom Flashcards';
-
-              acc[docId] = {
-                id: docId,
-                title: title,
-                subject: docTitleMap[docId] ? 'From Document' : 'Custom',
-                color: deckColors[Object.keys(acc).length % deckColors.length],
-                cards: [],
-                documentId: docId,
-                userId: user.id,
-              };
-            }
-            acc[docId].cards.push(card);
-            return acc;
-          },
-          {} as Record<string, FlashcardDeck>,
-        );
-
-        console.log('Grouped decks:', Object.keys(grouped));
-        setDecks(Object.values(grouped));
+        setDecks(Object.values(docDecks));
       } catch (error) {
         console.error('Error loading flashcards:', error);
         setDecks([]);
@@ -160,12 +149,6 @@ export default function FlashcardsScreen() {
         document_id: documentId,
       }));
 
-      // Get document title for deck name
-      const doc = documents.find((d) => d.id === documentId);
-      const deckTitle = doc
-        ? `${doc.title} Flashcards`
-        : 'Generated Flashcards';
-
       // Add new cards to the deck
       setDecks((prevDecks) => {
         const existingDeck = prevDecks.find((d) => d.documentId === documentId);
@@ -176,10 +159,11 @@ export default function FlashcardsScreen() {
               : d,
           );
         }
-        // Create new deck
+
+        const doc = documents.find((d) => d.id === documentId);
         const newDeck: FlashcardDeck = {
           id: documentId,
-          title: deckTitle,
+          title: doc ? `${doc.title} Flashcards` : 'Generated Flashcards',
           subject: 'From Document',
           color: deckColors[prevDecks.length % deckColors.length],
           cards: normalizedCards,
@@ -191,6 +175,15 @@ export default function FlashcardsScreen() {
 
       setShowGenerateModal(false);
       Alert.alert('Success', `Generated ${newCards.length} flashcards!`);
+
+      const doc = documents.find((d) => d.id === documentId);
+      await createActivity({
+        userId: user.id,
+        type: 'flashcard',
+        title: `Generated ${newCards.length} flashcards`,
+        description: doc ? `From: ${doc.title}` : 'Custom flashcards',
+        documentId,
+      });
     } catch (error) {
       console.error('Error generating flashcards:', error);
       Alert.alert('Error', 'Failed to generate flashcards. Please try again.');
@@ -200,6 +193,22 @@ export default function FlashcardsScreen() {
   };
 
   const flipAnim = useRef(new Animated.Value(0)).current;
+  const [currentStep, setCurrentStep] = useState(0);
+
+  useEffect(() => {
+    if (isGenerating) {
+      const stepInterval = setInterval(() => {
+        setCurrentStep((prev) => (prev < 3 ? prev + 1 : prev));
+      }, 2000);
+
+      return () => {
+        clearInterval(stepInterval);
+        setCurrentStep(0);
+      };
+    } else {
+      setCurrentStep(0);
+    }
+  }, [isGenerating]);
 
   const flipCard = () => {
     const toValue = isFlipped ? 0 : 1;
@@ -883,23 +892,133 @@ export default function FlashcardsScreen() {
             {isGenerating ? (
               <View style={styles.generatingFullContainer}>
                 <View style={styles.generatingContent}>
-                  <View style={styles.generatingIconCircle}>
-                    <MaterialCommunityIcons
-                      name="brain"
-                      size={44}
-                      color={colors.primary}
-                    />
+                  <View style={styles.generatingIconContainer}>
+                    <View style={styles.generatingIconBg}>
+                      <MaterialCommunityIcons
+                        name="brain"
+                        size={36}
+                        color={colors.primary}
+                      />
+                    </View>
                   </View>
+
                   <Text style={styles.generatingTitle}>
-                    Generating Flashcards
+                    Creating Your Flashcards
                   </Text>
                   <Text style={styles.generatingSubtitle}>
-                    AI is analyzing your document{'\n'}and creating
-                    flashcards...
+                    AI is analyzing your document and generating smart
+                    flashcards
                   </Text>
-                  <View style={styles.generatingLoaderContainer}>
-                    <ActivityIndicator size="large" color={colors.primary} />
+
+                  <View style={styles.generatingStepsContainer}>
+                    <View
+                      style={[
+                        styles.generatingStep,
+                        currentStep >= 1 && styles.generatingStepActive,
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.generatingStepIcon,
+                          currentStep >= 1 && {
+                            backgroundColor: colors.primary,
+                          },
+                        ]}
+                      >
+                        {currentStep >= 1 ? (
+                          <MaterialCommunityIcons
+                            name="check"
+                            size={12}
+                            color="#FFFFFF"
+                          />
+                        ) : (
+                          <View style={styles.generatingStepDot} />
+                        )}
+                      </View>
+                      <Text
+                        style={[
+                          styles.generatingStepText,
+                          currentStep >= 1 && styles.generatingStepTextActive,
+                        ]}
+                      >
+                        Analyzing
+                      </Text>
+                    </View>
+                    <View style={styles.generatingStepLine} />
+                    <View
+                      style={[
+                        styles.generatingStep,
+                        currentStep >= 2 && styles.generatingStepActive,
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.generatingStepIcon,
+                          currentStep >= 2 && {
+                            backgroundColor: colors.primary,
+                          },
+                        ]}
+                      >
+                        {currentStep >= 2 ? (
+                          <MaterialCommunityIcons
+                            name="check"
+                            size={12}
+                            color="#FFFFFF"
+                          />
+                        ) : (
+                          <View style={styles.generatingStepDot} />
+                        )}
+                      </View>
+                      <Text
+                        style={[
+                          styles.generatingStepText,
+                          currentStep >= 2 && styles.generatingStepTextActive,
+                        ]}
+                      >
+                        Extracting
+                      </Text>
+                    </View>
+                    <View style={styles.generatingStepLine} />
+                    <View
+                      style={[
+                        styles.generatingStep,
+                        currentStep >= 3 && styles.generatingStepActive,
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.generatingStepIcon,
+                          currentStep >= 3 && {
+                            backgroundColor: colors.primary,
+                          },
+                        ]}
+                      >
+                        {currentStep >= 3 ? (
+                          <MaterialCommunityIcons
+                            name="check"
+                            size={12}
+                            color="#FFFFFF"
+                          />
+                        ) : (
+                          <View style={styles.generatingStepDot} />
+                        )}
+                      </View>
+                      <Text
+                        style={[
+                          styles.generatingStepText,
+                          currentStep >= 3 && styles.generatingStepTextActive,
+                        ]}
+                      >
+                        Generating
+                      </Text>
+                    </View>
                   </View>
+
+                  <ActivityIndicator
+                    size="small"
+                    color={colors.primary}
+                    style={styles.generatingLoaderContainer}
+                  />
                 </View>
               </View>
             ) : (
@@ -1382,27 +1501,31 @@ const makeStyles = (c: AppColors) =>
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
+      paddingVertical: 32,
     },
     generatingContent: {
       alignItems: 'center',
       paddingHorizontal: 24,
+      width: '100%',
     },
-    generatingIconCircle: {
-      width: 100,
-      height: 100,
-      borderRadius: 50,
+    generatingIconContainer: {
+      marginBottom: 24,
+    },
+    generatingIconBg: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
       backgroundColor: c.primaryLight,
       alignItems: 'center',
       justifyContent: 'center',
-      marginBottom: 24,
       shadowColor: c.primary,
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
+      shadowOpacity: 0.2,
       shadowRadius: 8,
-      elevation: 8,
+      elevation: 6,
     },
     generatingTitle: {
-      fontSize: 20,
+      fontSize: 22,
       fontWeight: '700',
       color: c.text,
       marginBottom: 8,
@@ -1412,11 +1535,53 @@ const makeStyles = (c: AppColors) =>
       fontSize: 14,
       color: c.textSecondary,
       textAlign: 'center',
-      marginBottom: 24,
+      marginBottom: 32,
       lineHeight: 20,
     },
     generatingLoaderContainer: {
-      marginTop: 8,
+      marginTop: 24,
+    },
+    generatingStepsContainer: {
+      width: '100%',
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    generatingStep: {
+      alignItems: 'center',
+      width: 70,
+    },
+    generatingStepActive: {},
+    generatingStepIcon: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: c.skeleton,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 8,
+    },
+    generatingStepDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: c.textSecondary,
+    },
+    generatingStepLine: {
+      width: 24,
+      height: 2,
+      backgroundColor: c.skeleton,
+      marginHorizontal: 4,
+      marginBottom: 20,
+    },
+    generatingStepText: {
+      fontSize: 11,
+      color: c.textSecondary,
+      textAlign: 'center',
+    },
+    generatingStepTextActive: {
+      color: c.text,
+      fontWeight: '600',
     },
     createCard: {
       width: width / 2 - 22,

@@ -12,15 +12,17 @@ export const sendMessage = async (
   payload: SendMessagePayload,
   mode: 'strict' | 'free' = 'free',
 ): Promise<SendMessageResponse> => {
-  const endpoint = !payload.documentId ? '/chat/free' : '/chat/ask';
-
-  // Note: 'free' endpoint accepts 'history' and 'documentId' is optional
-  const { data } = await api.post<SendMessageResponse>(endpoint, {
+  const requestBody = {
+    documentId: payload.documentId,
     userId: payload.userId,
     question: payload.message,
-    documentId: payload.documentId, // Optional in 'free', required in 'strict'
-    history: payload.history, // Only used in 'free' mode
-  });
+    image: payload.image,
+  };
+
+  const { data } = await api.post<SendMessageResponse>(
+    '/chat/ask',
+    requestBody,
+  );
 
   return data;
 };

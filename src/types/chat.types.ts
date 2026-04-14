@@ -9,16 +9,18 @@ export interface ChatMessage {
   id: string;
   role: MessageRole;
   content: string;
-  sources?: Source[]; // Updated to use the Source interface
+  sources?: Source[];
   timestamp: Date;
-  modelUsed?: string; // Good for debugging the "Real Tech"
+  modelUsed?: string;
+  image?: string;
 }
 
 export interface SendMessagePayload {
   history: any;
   message: string;
-  documentId: string;
+  documentId?: string;
   userId: string;
+  image?: string;
 }
 
 export interface SendMessageResponse {

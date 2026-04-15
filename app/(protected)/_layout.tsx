@@ -28,6 +28,7 @@ export default function ProtectedLayout() {
       <Stack.Screen name="quiz" />
       <Stack.Screen name="documents" />
       <Stack.Screen name="profile" />
+      <Stack.Screen name="syllabus" />
     </Stack>
   );
 }

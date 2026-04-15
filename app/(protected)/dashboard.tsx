@@ -152,6 +152,17 @@ export default function Dashboard() {
     },
   ];
 
+  // Syllabus feature
+  const syllabusFeature = {
+    id: 'syllabus',
+    icon: 'school-outline' as keyof typeof Ionicons.glyphMap,
+    title: 'Syllabus',
+    description: 'Select your education level',
+    color: '#6366F1',
+    bgColor: '#EEF2FF',
+    route: '/syllabus',
+  };
+
   // Course progress data
   const courses = [
     {
@@ -176,6 +187,8 @@ export default function Dashboard() {
       color: '#F59E0B',
     },
   ];
+
+  const allFeatures = [...features, syllabusFeature];
 
   const recentActivity = [
     {
@@ -252,7 +265,7 @@ export default function Dashboard() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.featuresGrid}>
-            {features.map((feature) => (
+            {allFeatures.map((feature) => (
               <TouchableOpacity
                 key={feature.id}
                 style={styles.featureCard}

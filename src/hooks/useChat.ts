@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { sendMessage } from '../services/chat.service';
 import type { ChatMessage } from '../types/chat.types';
 import { randomUUID } from 'expo-crypto';
@@ -15,10 +15,21 @@ export const useChat = (userId: string, documentId?: string): UseChatReturn => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const initialLoadDone = useRef(false);
+
+  // Trigger initial welcome message for new conversations
+  useEffect(() => {
+    if (!initialLoadDone.current && !documentId && messages.length === 0) {
+      initialLoadDone.current = true;
+      // Send empty greeting to trigger welcome message
+      send('').catch(() => {});
+    }
+  }, [userId, documentId]);
 
   const send = useCallback(
     async (text: string, image?: string): Promise<void> => {
-      if (!text.trim()) return;
+      // Allow empty text only for initial welcome (no messages yet)
+      if (!text.trim() && messages.length > 0) return;
 
       const userMessage: ChatMessage = {
         id: randomUUID(),

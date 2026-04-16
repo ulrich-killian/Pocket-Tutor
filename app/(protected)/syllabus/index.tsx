@@ -6,18 +6,22 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../../../src/context/ThemeContext';
+import { useAuth } from '../../../src/hooks/useAuth';
 import { useSyllabus } from '../../../src/hooks/useSyllabus';
 import { EducationLevelCard } from '../../../src/components/syllabus/EducationLevelCard';
 import { StreamCard } from '../../../src/components/syllabus/StreamCard';
 import { EducationLevel, Stream } from '../../../src/types/syllabus';
+import syllabusService from '../../../src/services/syllabus.service';
 
 export default function SyllabusScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { user } = useAuth();
   const {
     levels,
     selectedLevel,
@@ -31,6 +35,7 @@ export default function SyllabusScreen() {
 
   const [streams, setStreams] = useState<Stream[]>([]);
   const [streamsLoading, setStreamsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleLevelSelect = useCallback(
     async (level: EducationLevel) => {
@@ -53,11 +58,27 @@ export default function SyllabusScreen() {
   );
 
   const handleStreamSelect = useCallback(
-    (stream: Stream) => {
+    async (stream: Stream) => {
       selectStream(stream);
-      router.back();
+      setIsSaving(true);
+
+      // Save syllabus selection to user's profile
+      if (user?.id && selectedLevel) {
+        try {
+          await syllabusService.selectSyllabus(
+            user.id,
+            selectedLevel.id,
+            stream.id,
+          );
+        } catch (err) {
+          console.error('Failed to save syllabus selection:', err);
+        }
+      }
+
+      // Navigate to chat
+      router.replace('/chat');
     },
-    [selectStream, router],
+    [selectStream, router, user, selectedLevel],
   );
 
   const handleBack = useCallback(() => {
@@ -87,13 +108,29 @@ export default function SyllabusScreen() {
       <View
         style={[styles.errorContainer, { backgroundColor: colors.background }]}
       >
-        <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
+        <Text style={[styles.errorText, { color: '#EF4444' }]}>{error}</Text>
         <TouchableOpacity
           style={[styles.retryButton, { backgroundColor: colors.primary }]}
           onPress={() => window.location.reload()}
         >
           <Text style={styles.retryText}>Retry</Text>
         </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (isSaving) {
+    return (
+      <View
+        style={[
+          styles.loadingContainer,
+          { backgroundColor: colors.background },
+        ]}
+      >
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={[styles.savingText, { color: colors.text }]}>
+          Saving your selection...
+        </Text>
       </View>
     );
   }
@@ -249,5 +286,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 16,
+  },
+  savingText: {
+    marginTop: 16,
+    fontSize: 16,
+    fontWeight: '500',
   },
 });

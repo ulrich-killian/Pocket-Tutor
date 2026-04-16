@@ -24,6 +24,8 @@ import AIThinking from '../../components/chat/AIThinking';
 import type { ChatMessage } from '../../src/types/chat.types';
 import { useAppTheme, type AppColors } from '../../src/context/ThemeContext';
 import { documentService } from '../../src/services/document.service';
+import syllabusService from '../../src/services/syllabus.service';
+import { useState } from 'react';
 
 export default function ChatScreen(): React.JSX.Element {
   const router = useRouter();
@@ -35,6 +37,25 @@ export default function ChatScreen(): React.JSX.Element {
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const userId = user?.id;
   const listRef = useRef<FlatList<ChatMessage>>(null);
+
+  // Fetch user syllabus context
+  const [syllabusContext, setSyllabusContext] = useState<{
+    educationLevel?: { name: string };
+    stream?: { name: string; subjects?: { name: string }[] };
+  } | null>(null);
+
+  useEffect(() => {
+    if (userId && isFreeChat) {
+      syllabusService
+        .getUserSyllabus(userId)
+        .then((data) => {
+          if (data?.educationLevel || data?.stream) {
+            setSyllabusContext(data);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [userId, isFreeChat]);
 
   const documentTitle =
     (params.title as string) || (documentId ? 'Document' : 'Free Chat');
@@ -205,7 +226,12 @@ export default function ChatScreen(): React.JSX.Element {
 
           {/* UPDATE THIS LINE BELOW */}
           <Text style={styles.headerSubtitle} numberOfLines={1}>
-            {!documentId ? 'Your Personal Academic Mentor' : documentTitle}
+            {syllabusContext?.educationLevel?.name &&
+            syllabusContext?.stream?.name
+              ? `${syllabusContext.educationLevel.name} • ${syllabusContext.stream.name}`
+              : !documentId
+                ? 'Your Personal Academic Mentor'
+                : documentTitle}
           </Text>
         </View>
 

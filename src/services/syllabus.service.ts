@@ -26,6 +26,24 @@ export const syllabusService = {
     const response = await api.get('/syllabus/seed');
     return response.data;
   },
+
+  selectSyllabus: async (
+    userId: string,
+    educationLevelId: string,
+    streamId: string,
+  ): Promise<{ educationLevel: EducationLevel; stream: Stream }> => {
+    const response = await api.post('/syllabus/select', {
+      userId,
+      educationLevelId,
+      streamId,
+    });
+    return response.data;
+  },
+
+  getUserSyllabus: async (userId: string) => {
+    const response = await api.get(`/syllabus/user/${userId}`);
+    return response.data;
+  },
 };
 
 export default syllabusService;

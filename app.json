@@ -14,7 +14,6 @@
       "scheme": "pockettutor"
     },
     "android": {
-      "usesCleartextTraffic": true,
       "package": "com.pockettutor.app",
       "intentFilters": [
         {

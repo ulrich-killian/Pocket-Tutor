@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,11 +7,15 @@ import {
   ScrollView,
   Image,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/hooks/useAuth';
 import { useAppTheme, type AppColors } from '../../src/context/ThemeContext';
+import chatSessionService, {
+  ChatSession,
+} from '../../src/services/chat-session.service';
 
 const { width } = Dimensions.get('window');
 
@@ -20,6 +24,22 @@ export default function Dashboard() {
   const { user } = useAuth();
   const { colors } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
+  const [loadingSessions, setLoadingSessions] = useState(false);
+
+  useEffect(() => {
+    if (user?.id) {
+      setLoadingSessions(true);
+      chatSessionService
+        .getUserSessions(user.id)
+        .then((sessions) => {
+          setChatSessions(sessions.slice(0, 3));
+        })
+        .catch(() => {})
+        .finally(() => setLoadingSessions(false));
+    }
+  }, [user?.id]);
 
   // Get time-based greeting
   const getGreeting = () => {
@@ -152,6 +172,17 @@ export default function Dashboard() {
     },
   ];
 
+  // Syllabus feature
+  const syllabusFeature = {
+    id: 'syllabus',
+    icon: 'school-outline' as keyof typeof Ionicons.glyphMap,
+    title: 'Syllabus',
+    description: 'Select your education level',
+    color: '#6366F1',
+    bgColor: '#EEF2FF',
+    route: '/syllabus',
+  };
+
   // Course progress data
   const courses = [
     {
@@ -177,6 +208,8 @@ export default function Dashboard() {
     },
   ];
 
+  const allFeatures = [...features, syllabusFeature];
+
   const recentActivity = [
     {
       id: '1',
@@ -198,17 +231,30 @@ export default function Dashboard() {
       iconBg: '#ECFDF5',
       route: '/flashcards',
     },
-    {
-      id: '3',
+    ...chatSessions.map((session) => ({
+      id: session.id,
       title: 'AI Chat Session',
-      subtitle: 'Physics Help',
-      time: '2 days ago',
+      subtitle: session.subject || session.title,
+      time: formatSessionTime(session.updatedAt),
       icon: 'chatbubbles' as keyof typeof Ionicons.glyphMap,
       iconColor: '#4F46E5',
       iconBg: '#EEF2FF',
-      route: '/chat',
-    },
+      route: `/chat?sessionId=${session.id}`,
+    })),
   ];
+
+  function formatSessionTime(dateStr: string): string {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (diffHours < 1) return 'Just now';
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return date.toLocaleDateString();
+  }
 
   const handleActivityPress = (route: string) => {
     router.push(route as any);
@@ -252,7 +298,7 @@ export default function Dashboard() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.featuresGrid}>
-            {features.map((feature) => (
+            {allFeatures.map((feature) => (
               <TouchableOpacity
                 key={feature.id}
                 style={styles.featureCard}
@@ -292,38 +338,48 @@ export default function Dashboard() {
             </TouchableOpacity>
           </View>
           <View style={styles.activityCard}>
-            {recentActivity.map((activity, index) => (
-              <TouchableOpacity
-                key={activity.id}
-                onPress={() => handleActivityPress(activity.route)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.activityItem}>
-                  <View
-                    style={[
-                      styles.activityIcon,
-                      { backgroundColor: activity.iconBg },
-                    ]}
-                  >
-                    <Ionicons
-                      name={activity.icon}
-                      size={18}
-                      color={activity.iconColor}
-                    />
+            {loadingSessions ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color={colors.primary} />
+              </View>
+            ) : recentActivity.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No recent activity</Text>
+              </View>
+            ) : (
+              recentActivity.map((activity, index) => (
+                <TouchableOpacity
+                  key={activity.id}
+                  onPress={() => handleActivityPress(activity.route)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.activityItem}>
+                    <View
+                      style={[
+                        styles.activityIcon,
+                        { backgroundColor: activity.iconBg },
+                      ]}
+                    >
+                      <Ionicons
+                        name={activity.icon}
+                        size={18}
+                        color={activity.iconColor}
+                      />
+                    </View>
+                    <View style={styles.activityContent}>
+                      <Text style={styles.activityTitle}>{activity.title}</Text>
+                      <Text style={styles.activitySubtitle}>
+                        {activity.subtitle}
+                      </Text>
+                    </View>
+                    <Text style={styles.activityTime}>{activity.time}</Text>
                   </View>
-                  <View style={styles.activityContent}>
-                    <Text style={styles.activityTitle}>{activity.title}</Text>
-                    <Text style={styles.activitySubtitle}>
-                      {activity.subtitle}
-                    </Text>
-                  </View>
-                  <Text style={styles.activityTime}>{activity.time}</Text>
-                </View>
-                {index < recentActivity.length - 1 && (
-                  <View style={styles.activityDivider} />
-                )}
-              </TouchableOpacity>
-            ))}
+                  {index < recentActivity.length - 1 && (
+                    <View style={styles.activityDivider} />
+                  )}
+                </TouchableOpacity>
+              ))
+            )}
           </View>
         </View>
 
@@ -853,5 +909,17 @@ const makeStyles = (c: AppColors) =>
       fontSize: 13,
       color: '#B45309',
       lineHeight: 19,
+    },
+    loadingContainer: {
+      padding: 20,
+      alignItems: 'center',
+    },
+    emptyContainer: {
+      padding: 20,
+      alignItems: 'center',
+    },
+    emptyText: {
+      fontSize: 14,
+      color: '#9CA3AF',
     },
   });

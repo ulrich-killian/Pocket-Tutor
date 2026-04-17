@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useMemo } from 'react';
+import React, { useRef, useEffect, useMemo, useState as UseState } from 'react';
 import {
   View,
   FlatList,
@@ -24,17 +24,39 @@ import AIThinking from '../../components/chat/AIThinking';
 import type { ChatMessage } from '../../src/types/chat.types';
 import { useAppTheme, type AppColors } from '../../src/context/ThemeContext';
 import { documentService } from '../../src/services/document.service';
+import syllabusService from '../../src/services/syllabus.service';
+import chatSessionService from '../../src/services/chat-session.service';
 
 export default function ChatScreen(): React.JSX.Element {
   const router = useRouter();
   const params = useLocalSearchParams();
   const documentId = params.documentId as string;
+  const sessionId = params.sessionId as string | undefined;
   const isFreeChat = !documentId;
   const { user } = useAuth();
   const { colors, isDark } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const userId = user?.id;
   const listRef = useRef<FlatList<ChatMessage>>(null);
+
+  // Fetch user syllabus context
+  const [syllabusContext, setSyllabusContext] = UseState<{
+    educationLevel?: { name: string };
+    stream?: { name: string; subjects?: { name: string }[] };
+  } | null>(null);
+
+  useEffect(() => {
+    if (userId && isFreeChat) {
+      syllabusService
+        .getUserSyllabus(userId)
+        .then((data) => {
+          if (data?.educationLevel || data?.stream) {
+            setSyllabusContext(data);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [userId, isFreeChat]);
 
   const documentTitle =
     (params.title as string) || (documentId ? 'Document' : 'Free Chat');
@@ -65,9 +87,25 @@ export default function ChatScreen(): React.JSX.Element {
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const { messages, send, loading, error } = useChat(userId, documentId);
 
-  const handleSend = async (text: string): Promise<void> => {
-    if (!text.trim()) return;
-    await send(text);
+  const handleSend = async (text: string, image?: string): Promise<void> => {
+    if (!text.trim() && !image) return;
+    await send(text, image);
+
+    if (sessionId && userId) {
+      chatSessionService.addMessage(sessionId, 'user', text).catch(() => {});
+      setTimeout(() => {
+        const lastMessage = messages[messages.length - 1];
+        if (lastMessage?.role === 'assistant') {
+          chatSessionService
+            .addMessage(sessionId, 'assistant', lastMessage.content)
+            .catch(() => {});
+          chatSessionService
+            .updateSession(sessionId, lastMessage.content, messages.length + 1)
+            .catch(() => {});
+        }
+      }, 500);
+    }
+
     setTimeout(() => {
       listRef.current?.scrollToEnd({ animated: true });
     }, 100);
@@ -205,7 +243,12 @@ export default function ChatScreen(): React.JSX.Element {
 
           {/* UPDATE THIS LINE BELOW */}
           <Text style={styles.headerSubtitle} numberOfLines={1}>
-            {!documentId ? 'Your Personal Academic Mentor' : documentTitle}
+            {syllabusContext?.educationLevel?.name &&
+            syllabusContext?.stream?.name
+              ? `${syllabusContext.educationLevel.name} • ${syllabusContext.stream.name}`
+              : !documentId
+                ? 'Your Personal Academic Mentor'
+                : documentTitle}
           </Text>
         </View>
 

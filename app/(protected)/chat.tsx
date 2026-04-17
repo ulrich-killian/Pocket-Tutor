@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useMemo } from 'react';
+import React, { useRef, useEffect, useMemo, useState as UseState } from 'react';
 import {
   View,
   FlatList,
@@ -25,12 +25,13 @@ import type { ChatMessage } from '../../src/types/chat.types';
 import { useAppTheme, type AppColors } from '../../src/context/ThemeContext';
 import { documentService } from '../../src/services/document.service';
 import syllabusService from '../../src/services/syllabus.service';
-import { useState } from 'react';
+import chatSessionService from '../../src/services/chat-session.service';
 
 export default function ChatScreen(): React.JSX.Element {
   const router = useRouter();
   const params = useLocalSearchParams();
   const documentId = params.documentId as string;
+  const sessionId = params.sessionId as string | undefined;
   const isFreeChat = !documentId;
   const { user } = useAuth();
   const { colors, isDark } = useAppTheme();
@@ -39,7 +40,7 @@ export default function ChatScreen(): React.JSX.Element {
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
   // Fetch user syllabus context
-  const [syllabusContext, setSyllabusContext] = useState<{
+  const [syllabusContext, setSyllabusContext] = UseState<{
     educationLevel?: { name: string };
     stream?: { name: string; subjects?: { name: string }[] };
   } | null>(null);
@@ -89,6 +90,18 @@ export default function ChatScreen(): React.JSX.Element {
   const handleSend = async (text: string, image?: string): Promise<void> => {
     if (!text.trim() && !image) return;
     await send(text, image);
+    
+    if (sessionId && userId) {
+      chatSessionService.addMessage(sessionId, 'user', text).catch(() => {});
+      setTimeout(() => {
+        const lastMessage = messages[messages.length - 1];
+        if (lastMessage?.role === 'assistant') {
+          chatSessionService.addMessage(sessionId, 'assistant', lastMessage.content).catch(() => {});
+          chatSessionService.updateSession(sessionId, lastMessage.content, messages.length + 1).catch(() => {});
+        }
+      }, 500);
+    }
+    
     setTimeout(() => {
       listRef.current?.scrollToEnd({ animated: true });
     }, 100);

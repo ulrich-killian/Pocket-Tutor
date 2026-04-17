@@ -17,6 +17,7 @@ import { EducationLevelCard } from '../../../src/components/syllabus/EducationLe
 import { StreamCard } from '../../../src/components/syllabus/StreamCard';
 import { EducationLevel, Stream } from '../../../src/types/syllabus';
 import syllabusService from '../../../src/services/syllabus.service';
+import chatSessionService from '../../../src/services/chat-session.service';
 
 export default function SyllabusScreen() {
   const router = useRouter();
@@ -62,7 +63,6 @@ export default function SyllabusScreen() {
       selectStream(stream);
       setIsSaving(true);
 
-      // Save syllabus selection to user's profile
       if (user?.id && selectedLevel) {
         try {
           await syllabusService.selectSyllabus(
@@ -70,12 +70,20 @@ export default function SyllabusScreen() {
             selectedLevel.id,
             stream.id,
           );
+
+          const sessionTitle = `${selectedLevel.name} - ${stream.name} Chat`;
+          await chatSessionService.createSession(
+            user.id,
+            sessionTitle,
+            stream.name,
+            selectedLevel.name,
+            stream.name,
+          );
         } catch (err) {
           console.error('Failed to save syllabus selection:', err);
         }
       }
 
-      // Navigate to chat
       router.replace('/chat');
     },
     [selectStream, router, user, selectedLevel],

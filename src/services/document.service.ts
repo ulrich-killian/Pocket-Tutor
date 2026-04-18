@@ -1,5 +1,6 @@
 import api from './api';
 import { Document, UploadResponse, DocumentError } from '../types/document';
+import { Platform } from 'react-native';
 
 export const documentService = {
   async uploadDocument(
@@ -8,7 +9,6 @@ export const documentService = {
     title: string,
   ): Promise<UploadResponse> {
     try {
-      console.log('--- Upload Start ---');
       console.log('Target URL:', `${api.defaults.baseURL}/documents/upload`);
       console.log('FILE:', file);
 
@@ -17,16 +17,16 @@ export const documentService = {
       formData.append('userId', userId);
       formData.append('title', title);
 
-      // For React Native, we need to append the file as a proper object
-      formData.append('file', {
-        uri: file.uri,
-        name: file.name || 'upload.pdf',
-        type: file.type || 'application/pdf',
-      } as any);
-
-      // Use fetch instead of axios for more reliable file uploads in React Native
-      const url = `${api.defaults.baseURL}/documents/upload`;
-      console.log('Full URL:', url);
+      if (Platform.OS === 'web') {
+        const blob = await uriToBlob(file.uri);
+        formData.append('file', blob, file.name || 'upload.pdf');
+      } else {
+        formData.append('file', {
+          uri: file.uri,
+          name: file.name || 'upload.pdf',
+          type: file.type || 'application/octet-stream',
+        } as any);
+      }
 
       const response = await api.post('/documents/upload', formData, {
         headers: {
@@ -34,11 +34,9 @@ export const documentService = {
         },
       });
 
-      // For axios, response.data contains the data directly
       console.log('Upload success:', response.data);
       return response.data;
     } catch (err: any) {
-      // Log detailed error information for debugging
       console.error('=== Upload Error Debug ===');
       console.error('Error name:', err.name);
       console.error('Error message:', err.message);
@@ -46,9 +44,7 @@ export const documentService = {
       console.error('Is Axios Error:', err.isAxiosError);
       console.error('Response:', err.response?.data);
       console.error('Status:', err.response?.status);
-      console.error('=========================');
 
-      // Provide more helpful error messages
       let errorMessage = 'Upload failed. Please try again.';
 
       if (err.code === 'ECONNABORTED') {
@@ -144,3 +140,8 @@ export const documentService = {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   },
 };
+async function uriToBlob(uri: string): Promise<Blob> {
+  const response = await fetch(uri);
+  const blob = await response.blob();
+  return blob;
+}

@@ -1,35 +1,47 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { sendMessage } from '../services/chat.service';
 import type { ChatMessage } from '../types/chat.types';
 import { randomUUID } from 'expo-crypto';
 
 interface UseChatReturn {
   messages: ChatMessage[];
-  send: (text: string) => Promise<void>;
+  send: (text: string, image?: string) => Promise<void>;
   loading: boolean;
   error: string | null;
   clearError: () => void;
   clearMessages: () => void;
 }
 
-export const useChat = (
-  userId: string, // Changed from sessionId to userId
-  documentId: string, // Changed to required since you're passing it
-): UseChatReturn => {
+export const useChat = (userId: string, documentId?: string): UseChatReturn => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const initialLoadDone = useRef(false);
+
+  // Trigger initial welcome message for new conversations
+  useEffect(() => {
+    if (!initialLoadDone.current && !documentId && messages.length === 0) {
+      initialLoadDone.current = true;
+      // Send empty greeting to trigger welcome message
+      send('').catch(() => {});
+    }
+  }, [userId, documentId]);
 
   const send = useCallback(
-    async (text: string): Promise<void> => {
+    async (text: string, image?: string): Promise<void> => {
+      // Allow empty text only for initial welcome (no messages yet)
+      if (!text.trim() && messages.length > 0) return;
+
       const userMessage: ChatMessage = {
         id: randomUUID(),
         role: 'user',
         content: text,
         timestamp: new Date(),
+        image: image,
       };
 
-      setMessages((prev) => [...prev, userMessage]);
+      const currentMessages = [...messages, userMessage];
+      setMessages(currentMessages);
       setLoading(true);
       setError(null);
 
@@ -39,12 +51,15 @@ export const useChat = (
           userId,
           'documentId:',
           documentId,
+          'hasImage:',
+          !!image,
         );
 
         const response = await sendMessage({
           message: text,
           documentId: documentId,
-          userId: userId, // Use the userId passed to the hook
+          userId: userId,
+          image: image,
         });
 
         if (!response || typeof response.answer !== 'string') {
@@ -55,11 +70,8 @@ export const useChat = (
           id: randomUUID(),
           role: 'assistant',
           content: response.answer,
-          sources: Array.isArray(response.sources) ? response.sources : [],
-          modelUsed:
-            typeof response.modelUsed === 'string'
-              ? response.modelUsed
-              : undefined,
+          sources: response.sources,
+          modelUsed: response.modelUsed,
           timestamp: new Date(),
         };
 
@@ -67,13 +79,12 @@ export const useChat = (
       } catch (err: unknown) {
         const message =
           err instanceof Error ? err.message : 'Something went wrong';
-        console.error('Chat error:', message);
         setError(message);
       } finally {
         setLoading(false);
       }
     },
-    [userId, documentId], // Updated dependencies
+    [userId, documentId, messages],
   );
 
   const clearError = useCallback((): void => setError(null), []);

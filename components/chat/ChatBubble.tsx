@@ -1,7 +1,65 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  Image,
+  Animated,
+} from 'react-native';
 import type { ChatMessage } from '../../src/types/chat.types';
 import { useAppTheme, type AppColors } from '../../src/context/ThemeContext';
+
+interface ParsedSegment {
+  text: string;
+  type: 'main' | 'sub' | 'key' | 'tip' | 'focus' | 'regular';
+}
+
+function parseContent(content: string): ParsedSegment[] {
+  const segments: ParsedSegment[] = [];
+  const lines = content.split('\n');
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      segments.push({ text: '\n', type: 'regular' });
+      continue;
+    }
+
+    if (trimmed.startsWith('🌟') || trimmed.startsWith('**')) {
+      const text = trimmed
+        .replace(/^🌟\s*/, '')
+        .replace(/\*\*/g, '')
+        .trim();
+      segments.push({ text: text + '\n', type: 'main' });
+    } else if (
+      trimmed.startsWith('•') ||
+      trimmed.startsWith('→') ||
+      trimmed.startsWith('-') ||
+      trimmed.startsWith('`')
+    ) {
+      const text = trimmed
+        .replace(/^[•→\-]\s*/, '')
+        .replace(/^`/, '')
+        .replace(/`$/, '')
+        .trim();
+      segments.push({ text: text + '\n', type: 'sub' });
+    } else if (trimmed.startsWith('📚')) {
+      const text = trimmed.replace(/^📚\s*/g, '').trim();
+      segments.push({ text: text + '\n', type: 'key' });
+    } else if (trimmed.startsWith('💡')) {
+      const text = trimmed.replace(/^💡\s*/g, '').trim();
+      segments.push({ text: text + '\n', type: 'tip' });
+    } else if (trimmed.startsWith('🎯')) {
+      const text = trimmed.replace(/^🎯\s*/g, '').trim();
+      segments.push({ text: text + '\n', type: 'focus' });
+    } else {
+      segments.push({ text: trimmed + '\n', type: 'regular' });
+    }
+  }
+
+  return segments;
+}
 
 interface ChatBubbleProps {
   message: ChatMessage;
@@ -51,14 +109,38 @@ export default function ChatBubble({ message }: ChatBubbleProps) {
             isUser ? styles.userBubble : styles.assistantBubble,
           ]}
         >
-          <Text
-            style={[
-              styles.text,
-              isUser ? styles.userText : styles.assistantText,
-            ]}
-          >
-            {message.content}
-          </Text>
+          {message.image && (
+            <Image source={{ uri: message.image }} style={styles.image} />
+          )}
+          {!isUser ? (
+            <View style={styles.contentContainer}>
+              {parseContent(message.content).map((segment, index) => (
+                <Text
+                  key={index}
+                  style={[
+                    styles.text,
+                    styles.assistantText,
+                    segment.type === 'main' && styles.mainTopic,
+                    segment.type === 'sub' && styles.subTopic,
+                    segment.type === 'key' && styles.keyConcept,
+                    segment.type === 'tip' && styles.tipText,
+                    segment.type === 'focus' && styles.focusText,
+                  ]}
+                >
+                  {segment.type === 'main' && '🌟 '}
+                  {segment.type === 'sub' && '• '}
+                  {segment.type === 'key' && '📚 '}
+                  {segment.type === 'tip' && '💡 '}
+                  {segment.type === 'focus' && '🎯 '}
+                  {segment.text}
+                </Text>
+              ))}
+            </View>
+          ) : (
+            <Text style={[styles.text, styles.userText]}>
+              {message.content}
+            </Text>
+          )}
         </View>
 
         {/* Model used indicator for AI */}
@@ -175,6 +257,12 @@ const makeStyles = (c: AppColors) =>
       fontSize: 15,
       lineHeight: 22,
     },
+    image: {
+      width: '100%',
+      height: 150,
+      borderRadius: 12,
+      marginBottom: 8,
+    },
     userText: {
       color: '#FFFFFF',
     },
@@ -240,5 +328,42 @@ const makeStyles = (c: AppColors) =>
       color: c.textTertiary,
       marginTop: 6,
       textAlign: 'right',
+    },
+    contentContainer: {
+      flexWrap: 0,
+    },
+    mainTopic: {
+      color: '#8B5CF6',
+      fontWeight: '700',
+      fontSize: 16,
+      marginTop: 8,
+      marginBottom: 2,
+    },
+    subTopic: {
+      color: '#6B7280',
+      fontSize: 14,
+      marginLeft: 12,
+      marginBottom: 2,
+    },
+    keyConcept: {
+      color: '#059669',
+      fontWeight: '600',
+      fontSize: 14,
+      marginTop: 6,
+      marginBottom: 2,
+    },
+    tipText: {
+      color: '#D97706',
+      fontWeight: '500',
+      fontSize: 14,
+      marginTop: 6,
+      fontStyle: 'italic',
+    },
+    focusText: {
+      color: '#DC2626',
+      fontWeight: '700',
+      fontSize: 14,
+      marginTop: 6,
+      marginBottom: 2,
     },
   });

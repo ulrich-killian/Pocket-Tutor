@@ -1,32 +1,25 @@
-import React, { useState, useMemo } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  TextInput,
-  ScrollView,
-  Platform,
-  Alert,
-} from 'react-native';
-import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import * as DocumentPicker from 'expo-document-picker';
+import { useRouter } from 'expo-router';
+import React, { useMemo, useState } from 'react';
+import {
+  Alert,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import ProcessingScreen, {
   ProcessingStep,
 } from '../../components/ProcessingScreen';
-import { documentService } from '../../src/services/document.service';
-import { supabase } from '../../src/lib/supabase';
 import { useAppTheme, type AppColors } from '../../src/context/ThemeContext';
+import { SelectedFile, useFilePicker } from '../../src/hooks/useFilePicker';
+import { supabase } from '../../src/lib/supabase';
+import { documentService } from '../../src/services/document.service';
 
 type FileType = 'pdf' | 'docx' | 'txt';
-
-interface SelectedFile {
-  uri: string;
-  name: string;
-  type: string;
-  size: number;
-}
 
 const FILE_TYPES: { type: FileType; icon: string; label: string }[] = [
   { type: 'pdf', icon: 'document-text', label: 'PDF' },
@@ -60,12 +53,14 @@ export default function UploadScreen() {
   const { colors } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [selectedType, setSelectedType] = useState<FileType | null>(null);
-  const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null);
+  const [selectedFile, setSelectedFile] = useState<SelectedFile>(null);
   const [subject, setSubject] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStep, setProcessingStep] =
     useState<ProcessingStep>('uploading');
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
+
+  const { selectFile: pickFile, inputRef } = useFilePicker();
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 B';
@@ -76,38 +71,20 @@ export default function UploadScreen() {
   };
 
   const handleSelectFile = async (fileType?: FileType) => {
-    try {
-      const mimeTypes = getMimeTypeForFileType(
-        fileType || selectedType || undefined,
-      );
+    const mimeTypes = getMimeTypeForFileType(
+      fileType || selectedType || undefined,
+    );
+    const file = await pickFile(mimeTypes);
 
-      const result = await DocumentPicker.getDocumentAsync({
-        type: mimeTypes,
-        copyToCacheDirectory: true,
-      });
+    if (!file) return;
 
-      if (result.canceled || !result.assets || result.assets.length === 0) {
-        return;
-      }
-
-      const file = result.assets[0];
-
-      // Check file size (max 20MB)
-      if (file.size && file.size > 20 * 1024 * 1024) {
-        Alert.alert('File Too Large', 'Maximum file size is 20MB');
-        return;
-      }
-
-      setSelectedFile({
-        uri: file.uri,
-        name: file.name,
-        type: file.mimeType || 'application/octet-stream',
-        size: file.size || 0,
-      });
-    } catch (error) {
-      console.error('Error selecting file:', error);
-      Alert.alert('Error', 'Failed to select file');
+    // Check file size (max 20MB)
+    if (file.size > 20 * 1024 * 1024) {
+      Alert.alert('File Too Large', 'Maximum file size is 20MB');
+      return;
     }
+
+    setSelectedFile(file);
   };
 
   const handleUpload = async () => {
@@ -177,27 +154,29 @@ export default function UploadScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="arrow-back" size={24} color="#1F2937" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Pocket Tutor</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+      {/* Single hidden file input for web - outside everything */}
+      {Platform.OS === 'web' && (
+        <input
+          ref={inputRef as React.RefObject<HTMLInputElement>}
+          type="file"
+          onChange={() => {}}
+          style={{
+            position: 'absolute',
+            opacity: 0,
+            pointerEvents: 'none',
+            width: 0,
+            height: 0,
+          }}
+          accept=".pdf,.doc,.docx,.txt,application/pdf,text/plain"
+        />
+      )}
 
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Drag Handle */}
         <View style={styles.dragHandle} />
-
-        {/* Title */}
         <Text style={styles.title}>Upload Study Material</Text>
 
         {/* File Type Selector */}
@@ -228,7 +207,7 @@ export default function UploadScreen() {
           ))}
         </View>
 
-        {/* Upload Area */}
+        {/* Upload Area - NO input element inside here anymore */}
         <TouchableOpacity
           style={[styles.uploadArea, selectedFile && styles.uploadAreaWithFile]}
           onPress={() => handleSelectFile()}
@@ -263,10 +242,8 @@ export default function UploadScreen() {
           )}
         </TouchableOpacity>
 
-        {/* Max File Size */}
         <Text style={styles.maxSizeText}>Max file size: 20MB</Text>
 
-        {/* Subject Input */}
         <View style={styles.inputContainer}>
           <Text style={styles.inputLabel}>Subject (optional)</Text>
           <TextInput
@@ -278,7 +255,6 @@ export default function UploadScreen() {
           />
         </View>
 
-        {/* Upload Button */}
         <TouchableOpacity
           style={[
             styles.uploadButton,
@@ -290,7 +266,6 @@ export default function UploadScreen() {
           <Text style={styles.uploadButtonText}>Upload & Process</Text>
         </TouchableOpacity>
 
-        {/* Privacy Note */}
         <View style={styles.privacyNote}>
           <Ionicons name="lock-closed" size={14} color="#9CA3AF" />
           <Text style={styles.privacyText}>
@@ -299,7 +274,6 @@ export default function UploadScreen() {
         </View>
       </ScrollView>
 
-      {/* Bottom Actions */}
       <View style={styles.bottomActions}>
         <TouchableOpacity
           style={styles.actionIconButton}

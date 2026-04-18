@@ -9,6 +9,7 @@ interface UseChatReturn {
   loading: boolean;
   error: string | null;
   clearError: () => void;
+  clearMessages: () => void;
 }
 
 export const useChat = (
@@ -46,12 +47,19 @@ export const useChat = (
           userId: userId, // Use the userId passed to the hook
         });
 
+        if (!response || typeof response.answer !== 'string') {
+          throw new Error('Invalid response from server');
+        }
+
         const aiMessage: ChatMessage = {
           id: randomUUID(),
           role: 'assistant',
-          content: response.answer, // Changed from response.reply to response.answer
-          sources: response.sources,
-          modelUsed: response.modelUsed,
+          content: response.answer,
+          sources: Array.isArray(response.sources) ? response.sources : [],
+          modelUsed:
+            typeof response.modelUsed === 'string'
+              ? response.modelUsed
+              : undefined,
           timestamp: new Date(),
         };
 
@@ -69,6 +77,7 @@ export const useChat = (
   );
 
   const clearError = useCallback((): void => setError(null), []);
+  const clearMessages = useCallback((): void => setMessages([]), []);
 
-  return { messages, send, loading, error, clearError };
+  return { messages, send, loading, error, clearError, clearMessages };
 };

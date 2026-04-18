@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useMemo } from 'react';
+import React, { useRef, useEffect, useMemo, useState } from 'react';
 import {
   View,
   FlatList,
@@ -10,6 +10,8 @@ import {
   ListRenderItemInfo,
   TouchableOpacity,
   StatusBar,
+  Modal,
+  Pressable,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -63,7 +65,11 @@ export default function ChatScreen(): React.JSX.Element {
     );
   }
 
-  const { messages, send, loading, error } = useChat(userId, documentId);
+  const { messages, send, loading, error, clearMessages } = useChat(
+    userId,
+    documentId,
+  );
+  const [menuVisible, setMenuVisible] = useState(false);
 
   const handleSend = async (text: string): Promise<void> => {
     if (!text.trim()) return;
@@ -119,14 +125,57 @@ export default function ChatScreen(): React.JSX.Element {
 
         <TouchableOpacity
           style={styles.headerButton}
-          onPress={() => {
-            /* Add menu action */
-          }}
+          onPress={() => setMenuVisible(true)}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="ellipsis-vertical" size={24} color="#6B7280" />
         </TouchableOpacity>
       </View>
+
+      {/* Menu Modal */}
+      <Modal
+        visible={menuVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setMenuVisible(false)}
+      >
+        <Pressable
+          style={styles.menuOverlay}
+          onPress={() => setMenuVisible(false)}
+        >
+          <View style={styles.menuContainer}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                setMenuVisible(false);
+                clearMessages();
+              }}
+            >
+              <Ionicons name="trash-outline" size={20} color={colors.text} />
+              <Text style={styles.menuItemText}>Clear Chat</Text>
+            </TouchableOpacity>
+
+            <View style={styles.menuDivider} />
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                setMenuVisible(false);
+                router.push({
+                  pathname: '/(protected)/documents',
+                } as any);
+              }}
+            >
+              <Ionicons
+                name="document-text-outline"
+                size={20}
+                color={colors.text}
+              />
+              <Text style={styles.menuItemText}>View Documents</Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
 
       {/* Messages List */}
       <FlatList<ChatMessage>
@@ -399,5 +448,40 @@ const makeStyles = (c: AppColors) =>
       color: '#FFFFFF',
       fontSize: 16,
       fontWeight: '600',
+    },
+    menuOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.3)',
+      justifyContent: 'flex-start',
+      alignItems: 'flex-end',
+      paddingTop: Platform.OS === 'ios' ? 100 : 90,
+      paddingRight: 16,
+    },
+    menuContainer: {
+      backgroundColor: c.surface,
+      borderRadius: 12,
+      paddingVertical: 4,
+      minWidth: 180,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 12,
+      elevation: 8,
+    },
+    menuItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      gap: 12,
+    },
+    menuItemText: {
+      fontSize: 15,
+      color: c.text,
+    },
+    menuDivider: {
+      height: 1,
+      backgroundColor: c.border,
+      marginHorizontal: 12,
     },
   });

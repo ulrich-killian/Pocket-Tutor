@@ -9,6 +9,7 @@ interface UseChatReturn {
   loading: boolean;
   error: string | null;
   clearError: () => void;
+  clearMessages: () => void;
 }
 
 export const useChat = (userId: string, documentId?: string): UseChatReturn => {
@@ -61,6 +62,10 @@ export const useChat = (userId: string, documentId?: string): UseChatReturn => {
           image: image,
         });
 
+        if (!response || typeof response.answer !== 'string') {
+          throw new Error('Invalid response from server');
+        }
+
         const aiMessage: ChatMessage = {
           id: randomUUID(),
           role: 'assistant',
@@ -83,6 +88,7 @@ export const useChat = (userId: string, documentId?: string): UseChatReturn => {
   );
 
   const clearError = useCallback((): void => setError(null), []);
+  const clearMessages = useCallback((): void => setMessages([]), []);
 
-  return { messages, send, loading, error, clearError };
+  return { messages, send, loading, error, clearError, clearMessages };
 };

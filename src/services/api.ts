@@ -1,9 +1,12 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: process.env.EXPO_PUBLIC_API_URL ?? '',
+  baseURL:
+    (process.env.EXPO_PUBLIC_API_URL ?? 'http://192.168.1.32:3000') + '/api',
   timeout: 30000,
 });
+
+console.log('BASE URL:', api.defaults.baseURL);
 
 api.interceptors.request.use((config) => {
   if (config.data instanceof FormData) {

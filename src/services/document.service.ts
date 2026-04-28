@@ -17,6 +17,7 @@ export const documentService = {
       formData.append('userId', userId);
       formData.append('title', title);
 
+      // For React Native, we need to append the file as a proper object
       if (Platform.OS === 'web') {
         const blob = await uriToBlob(file.uri);
         formData.append('file', blob, file.name || 'upload.pdf');
@@ -28,7 +29,13 @@ export const documentService = {
         } as any);
       }
 
-      const response = await api.post('/documents/upload', formData, {
+      // Use fetch instead of axios for more reliable file uploads in React Native
+      const url = `${api.defaults.baseURL}/documents/upload`;
+      console.log('Full URL:', url);
+
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData,
         headers: {
           Accept: 'application/json',
         },

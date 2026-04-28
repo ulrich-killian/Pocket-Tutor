@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import type {
   SubmitQuizResponse,
   SubmitQuizAnswer,
 } from '../../src/types/quiz.type';
+import { useAppTheme, type AppColors } from '../../src/context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
@@ -47,6 +48,8 @@ export default function QuizScreen() {
   const params = useLocalSearchParams();
   const documentId = params.documentId as string;
   const { user } = useAuth();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const [phase, setPhase] = useState<QuizPhase>(documentId ? 'setup' : 'setup');
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
@@ -693,648 +696,649 @@ export default function QuizScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  scrollView: {
-    flex: 1,
-  },
+const makeStyles = (c: AppColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: c.background,
+    },
+    scrollView: {
+      flex: 1,
+    },
 
-  // ── Header ──────────────────────────
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 56 : 44,
-    paddingBottom: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  headerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F1F5F9',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerCenter: {
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1F2937',
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    marginTop: 2,
-  },
+    // ── Header ──────────────────────────
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingTop: Platform.OS === 'ios' ? 56 : 44,
+      paddingBottom: 12,
+      paddingHorizontal: 16,
+      backgroundColor: c.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: c.borderLight,
+    },
+    headerButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: c.borderLight,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    headerCenter: {
+      alignItems: 'center',
+    },
+    headerTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: c.text,
+    },
+    headerSubtitle: {
+      fontSize: 12,
+      color: c.textTertiary,
+      marginTop: 2,
+    },
 
-  // ── Progress ────────────────────────
-  progressContainer: {
-    height: 4,
-    backgroundColor: '#E2E8F0',
-  },
-  progressBar: {
-    height: 4,
-    backgroundColor: '#1E3A8A',
-    borderRadius: 2,
-  },
+    // ── Progress ────────────────────────
+    progressContainer: {
+      height: 4,
+      backgroundColor: c.skeleton,
+    },
+    progressBar: {
+      height: 4,
+      backgroundColor: c.primary,
+      borderRadius: 2,
+    },
 
-  // ── Empty State ─────────────────────
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-  },
-  emptyIconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#F1F5F9',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  emptyTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontSize: 15,
-    color: '#6B7280',
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 32,
-  },
+    // ── Empty State ─────────────────────
+    emptyState: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 40,
+    },
+    emptyIconContainer: {
+      width: 100,
+      height: 100,
+      borderRadius: 50,
+      backgroundColor: c.borderLight,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 24,
+    },
+    emptyTitle: {
+      fontSize: 22,
+      fontWeight: '700',
+      color: c.text,
+      marginBottom: 8,
+    },
+    emptySubtitle: {
+      fontSize: 15,
+      color: c.textSecondary,
+      textAlign: 'center',
+      lineHeight: 22,
+      marginBottom: 32,
+    },
 
-  // ── Buttons ─────────────────────────
-  primaryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1E3A8A',
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 14,
-    gap: 10,
-  },
-  primaryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+    // ── Buttons ─────────────────────────
+    primaryButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: c.primary,
+      paddingHorizontal: 24,
+      paddingVertical: 14,
+      borderRadius: 14,
+      gap: 10,
+    },
+    primaryButtonText: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: '600',
+    },
 
-  // ── Loading ─────────────────────────
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 40,
-  },
-  loadingCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 40,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
-    width: '100%',
-  },
-  loadingTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginTop: 20,
-  },
-  loadingSubtitle: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginTop: 8,
-    textAlign: 'center',
-  },
+    // ── Loading ─────────────────────────
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 40,
+    },
+    loadingCard: {
+      backgroundColor: c.surface,
+      borderRadius: 24,
+      padding: 40,
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.08,
+      shadowRadius: 12,
+      elevation: 4,
+      width: '100%',
+    },
+    loadingTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: c.text,
+      marginTop: 20,
+    },
+    loadingSubtitle: {
+      fontSize: 14,
+      color: c.textSecondary,
+      marginTop: 8,
+      textAlign: 'center',
+    },
 
-  // ── Setup Phase ─────────────────────
-  setupContent: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  setupHero: {
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 32,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  setupHeroIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 24,
-    backgroundColor: '#EEF2FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  setupHeroTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 8,
-  },
-  setupHeroSubtitle: {
-    fontSize: 15,
-    color: '#6B7280',
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  settingCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  settingHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 16,
-  },
-  settingTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  countSelector: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  countOption: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 14,
-    backgroundColor: '#F1F5F9',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  countOptionActive: {
-    backgroundColor: '#EEF2FF',
-    borderColor: '#1E3A8A',
-  },
-  countOptionText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#6B7280',
-  },
-  countOptionTextActive: {
-    color: '#1E3A8A',
-  },
-  infoRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 24,
-  },
-  infoCard: {
-    flex: 1,
-    borderRadius: 18,
-    padding: 18,
-    alignItems: 'center',
-    gap: 8,
-  },
-  infoCardTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1F2937',
-    textAlign: 'center',
-  },
-  infoCardDesc: {
-    fontSize: 12,
-    color: '#6B7280',
-    textAlign: 'center',
-  },
-  errorBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEF2F2',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 16,
-    gap: 10,
-  },
-  errorText: {
-    flex: 1,
-    fontSize: 14,
-    color: '#EF4444',
-  },
-  generateButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#1E3A8A',
-    paddingVertical: 18,
-    borderRadius: 16,
-    gap: 10,
-    shadowColor: '#1E3A8A',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  generateButtonText: {
-    color: '#FFFFFF',
-    fontSize: 17,
-    fontWeight: '700',
-  },
+    // ── Setup Phase ─────────────────────
+    setupContent: {
+      padding: 20,
+      paddingBottom: 40,
+    },
+    setupHero: {
+      alignItems: 'center',
+      backgroundColor: c.surface,
+      borderRadius: 24,
+      padding: 32,
+      marginBottom: 20,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.06,
+      shadowRadius: 8,
+      elevation: 3,
+    },
+    setupHeroIcon: {
+      width: 80,
+      height: 80,
+      borderRadius: 24,
+      backgroundColor: c.primaryLight,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    setupHeroTitle: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: c.text,
+      marginBottom: 8,
+    },
+    setupHeroSubtitle: {
+      fontSize: 15,
+      color: c.textSecondary,
+      textAlign: 'center',
+      lineHeight: 22,
+    },
+    settingCard: {
+      backgroundColor: c.surface,
+      borderRadius: 18,
+      padding: 20,
+      marginBottom: 16,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 6,
+      elevation: 2,
+    },
+    settingHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      marginBottom: 16,
+    },
+    settingTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: c.text,
+    },
+    countSelector: {
+      flexDirection: 'row',
+      gap: 12,
+    },
+    countOption: {
+      flex: 1,
+      paddingVertical: 14,
+      borderRadius: 14,
+      backgroundColor: c.borderLight,
+      alignItems: 'center',
+      borderWidth: 2,
+      borderColor: 'transparent',
+    },
+    countOptionActive: {
+      backgroundColor: c.primaryLight,
+      borderColor: c.primary,
+    },
+    countOptionText: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: c.textSecondary,
+    },
+    countOptionTextActive: {
+      color: c.primary,
+    },
+    infoRow: {
+      flexDirection: 'row',
+      gap: 12,
+      marginBottom: 24,
+    },
+    infoCard: {
+      flex: 1,
+      borderRadius: 18,
+      padding: 18,
+      alignItems: 'center',
+      gap: 8,
+    },
+    infoCardTitle: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: c.text,
+      textAlign: 'center',
+    },
+    infoCardDesc: {
+      fontSize: 12,
+      color: c.textSecondary,
+      textAlign: 'center',
+    },
+    errorBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#FEF2F2',
+      borderRadius: 12,
+      padding: 14,
+      marginBottom: 16,
+      gap: 10,
+    },
+    errorText: {
+      flex: 1,
+      fontSize: 14,
+      color: '#EF4444',
+    },
+    generateButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: c.primary,
+      paddingVertical: 18,
+      borderRadius: 16,
+      gap: 10,
+      shadowColor: '#1E3A8A',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.3,
+      shadowRadius: 12,
+      elevation: 6,
+    },
+    generateButtonText: {
+      color: '#FFFFFF',
+      fontSize: 17,
+      fontWeight: '700',
+    },
 
-  // ── Quiz Active ─────────────────────
-  quizContent: {
-    padding: 20,
-    paddingBottom: 20,
-  },
-  bloomBadgeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  bloomBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    gap: 6,
-  },
-  bloomBadgeDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  bloomBadgeText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  questionCounter: {
-    fontSize: 13,
-    color: '#9CA3AF',
-    fontWeight: '500',
-  },
-  questionCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 24,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  questionText: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#1F2937',
-    lineHeight: 26,
-  },
-  optionsContainer: {
-    gap: 12,
-  },
-  optionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 2,
-    borderColor: '#E2E8F0',
-    gap: 14,
-  },
-  optionSelected: {
-    borderColor: '#1E3A8A',
-    backgroundColor: '#EEF2FF',
-  },
-  optionCorrect: {
-    borderColor: '#10B981',
-    backgroundColor: '#ECFDF5',
-  },
-  optionWrong: {
-    borderColor: '#EF4444',
-    backgroundColor: '#FEF2F2',
-  },
-  optionLetter: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: '#F1F5F9',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  optionLetterSelected: {
-    backgroundColor: '#1E3A8A',
-  },
-  optionLetterCorrect: {
-    backgroundColor: '#10B981',
-  },
-  optionLetterWrong: {
-    backgroundColor: '#EF4444',
-  },
-  optionLetterText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#6B7280',
-  },
-  optionLetterTextActive: {
-    color: '#FFFFFF',
-  },
-  optionText: {
-    flex: 1,
-    fontSize: 15,
-    color: '#374151',
-    lineHeight: 22,
-  },
-  optionTextSelected: {
-    color: '#1E3A8A',
-    fontWeight: '600',
-  },
-  optionTextCorrect: {
-    color: '#065F46',
-    fontWeight: '600',
-  },
-  optionTextWrong: {
-    color: '#991B1B',
-    fontWeight: '600',
-  },
+    // ── Quiz Active ─────────────────────
+    quizContent: {
+      padding: 20,
+      paddingBottom: 20,
+    },
+    bloomBadgeRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    bloomBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+      gap: 6,
+    },
+    bloomBadgeDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+    },
+    bloomBadgeText: {
+      fontSize: 13,
+      fontWeight: '600',
+    },
+    questionCounter: {
+      fontSize: 13,
+      color: '#9CA3AF',
+      fontWeight: '500',
+    },
+    questionCard: {
+      backgroundColor: c.surface,
+      borderRadius: 20,
+      padding: 24,
+      marginBottom: 20,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.06,
+      shadowRadius: 8,
+      elevation: 3,
+    },
+    questionText: {
+      fontSize: 17,
+      fontWeight: '600',
+      color: c.primary,
+      lineHeight: 26,
+    },
+    optionsContainer: {
+      gap: 12,
+    },
+    optionButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: c.surface,
+      borderRadius: 16,
+      padding: 16,
+      borderWidth: 2,
+      borderColor: c.skeleton,
+      gap: 14,
+    },
+    optionSelected: {
+      borderColor: c.primary,
+      backgroundColor: c.primaryLight,
+    },
+    optionCorrect: {
+      borderColor: '#10B981',
+      backgroundColor: '#ECFDF5',
+    },
+    optionWrong: {
+      borderColor: '#EF4444',
+      backgroundColor: '#FEF2F2',
+    },
+    optionLetter: {
+      width: 36,
+      height: 36,
+      borderRadius: 12,
+      backgroundColor: c.borderLight,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    optionLetterSelected: {
+      backgroundColor: c.primary,
+    },
+    optionLetterCorrect: {
+      backgroundColor: '#10B981',
+    },
+    optionLetterWrong: {
+      backgroundColor: '#EF4444',
+    },
+    optionLetterText: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: c.textSecondary,
+    },
+    optionLetterTextActive: {
+      color: '#FFFFFF',
+    },
+    optionText: {
+      flex: 1,
+      fontSize: 15,
+      color: c.text,
+      lineHeight: 22,
+    },
+    optionTextSelected: {
+      color: c.primary,
+      fontWeight: '600',
+    },
+    optionTextCorrect: {
+      color: '#065F46',
+      fontWeight: '600',
+    },
+    optionTextWrong: {
+      color: '#991B1B',
+      fontWeight: '600',
+    },
 
-  // ── Explanation ─────────────────────
-  explanationCard: {
-    backgroundColor: '#FFFBEB',
-    borderRadius: 16,
-    padding: 18,
-    marginTop: 20,
-    borderWidth: 1,
-    borderColor: '#FDE68A',
-  },
-  explanationHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 10,
-  },
-  explanationTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#92400E',
-  },
-  explanationText: {
-    fontSize: 14,
-    color: '#78350F',
-    lineHeight: 22,
-  },
+    // ── Explanation ─────────────────────
+    explanationCard: {
+      backgroundColor: '#FFFBEB',
+      borderRadius: 16,
+      padding: 18,
+      marginTop: 20,
+      borderWidth: 1,
+      borderColor: '#FDE68A',
+    },
+    explanationHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 10,
+    },
+    explanationTitle: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: '#92400E',
+    },
+    explanationText: {
+      fontSize: 14,
+      color: '#78350F',
+      lineHeight: 22,
+    },
 
-  // ── Bottom Bar ──────────────────────
-  bottomBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    paddingBottom: Platform.OS === 'ios' ? 34 : 14,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-  },
-  navButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-  },
-  navButtonDisabled: {
-    opacity: 0.4,
-  },
-  navButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1E3A8A',
-  },
-  navButtonTextDisabled: {
-    color: '#D1D5DB',
-  },
-  navButtonRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-  },
-  navButtonRightText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1E3A8A',
-  },
-  dotsContainer: {
-    flexDirection: 'row',
-    gap: 6,
-    alignItems: 'center',
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#E2E8F0',
-  },
-  dotActive: {
-    width: 24,
-    backgroundColor: '#1E3A8A',
-    borderRadius: 4,
-  },
-  dotAnswered: {
-    backgroundColor: '#93C5FD',
-  },
-  submitButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1E3A8A',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 14,
-    gap: 8,
-  },
-  submitButtonDisabled: {
-    backgroundColor: '#93C5FD',
-  },
-  submitButtonText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
-  },
+    // ── Bottom Bar ──────────────────────
+    bottomBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      paddingBottom: Platform.OS === 'ios' ? 34 : 14,
+      backgroundColor: c.surface,
+      borderTopWidth: 1,
+      borderTopColor: c.borderLight,
+    },
+    navButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      paddingVertical: 10,
+      paddingHorizontal: 14,
+    },
+    navButtonDisabled: {
+      opacity: 0.4,
+    },
+    navButtonText: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: c.primary,
+    },
+    navButtonTextDisabled: {
+      color: '#D1D5DB',
+    },
+    navButtonRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      paddingVertical: 10,
+      paddingHorizontal: 14,
+    },
+    navButtonRightText: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: c.primary,
+    },
+    dotsContainer: {
+      flexDirection: 'row',
+      gap: 6,
+      alignItems: 'center',
+    },
+    dot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: c.skeleton,
+    },
+    dotActive: {
+      width: 24,
+      backgroundColor: c.primary,
+      borderRadius: 4,
+    },
+    dotAnswered: {
+      backgroundColor: '#93C5FD',
+    },
+    submitButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: c.primary,
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+      borderRadius: 14,
+      gap: 8,
+    },
+    submitButtonDisabled: {
+      backgroundColor: '#93C5FD',
+    },
+    submitButtonText: {
+      color: '#FFFFFF',
+      fontSize: 15,
+      fontWeight: '700',
+    },
 
-  // ── Results ─────────────────────────
-  resultsContent: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  scoreCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 32,
-    alignItems: 'center',
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  gradeBadge: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  gradeText: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  scorePercentage: {
-    fontSize: 44,
-    fontWeight: '800',
-    color: '#1F2937',
-  },
-  scoreLabel: {
-    fontSize: 15,
-    color: '#6B7280',
-    marginTop: 4,
-    marginBottom: 20,
-  },
-  scoreBar: {
-    width: '100%',
-    height: 8,
-    backgroundColor: '#E2E8F0',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  scoreBarFill: {
-    height: 8,
-    borderRadius: 4,
-  },
+    // ── Results ─────────────────────────
+    resultsContent: {
+      padding: 20,
+      paddingBottom: 40,
+    },
+    scoreCard: {
+      backgroundColor: c.surface,
+      borderRadius: 24,
+      padding: 32,
+      alignItems: 'center',
+      marginBottom: 20,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.08,
+      shadowRadius: 12,
+      elevation: 4,
+    },
+    gradeBadge: {
+      width: 64,
+      height: 64,
+      borderRadius: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    gradeText: {
+      fontSize: 28,
+      fontWeight: '800',
+      color: '#FFFFFF',
+    },
+    scorePercentage: {
+      fontSize: 44,
+      fontWeight: '800',
+      color: c.text,
+    },
+    scoreLabel: {
+      fontSize: 15,
+      color: c.textSecondary,
+      marginTop: 4,
+      marginBottom: 20,
+    },
+    scoreBar: {
+      width: '100%',
+      height: 8,
+      backgroundColor: c.skeleton,
+      borderRadius: 4,
+      overflow: 'hidden',
+    },
+    scoreBarFill: {
+      height: 8,
+      borderRadius: 4,
+    },
 
-  // ── Bloom Breakdown ─────────────────
-  bloomCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  bloomCardTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 18,
-  },
-  bloomRow: {
-    marginBottom: 14,
-  },
-  bloomLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  bloomDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 8,
-  },
-  bloomLabel: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#374151',
-  },
-  bloomScore: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1F2937',
-  },
-  bloomBar: {
-    height: 6,
-    backgroundColor: '#F1F5F9',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  bloomBarFill: {
-    height: 6,
-    borderRadius: 3,
-  },
+    // ── Bloom Breakdown ─────────────────
+    bloomCard: {
+      backgroundColor: c.surface,
+      borderRadius: 20,
+      padding: 20,
+      marginBottom: 20,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 6,
+      elevation: 2,
+    },
+    bloomCardTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: c.text,
+      marginBottom: 18,
+    },
+    bloomRow: {
+      marginBottom: 14,
+    },
+    bloomLabelRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 6,
+    },
+    bloomDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      marginRight: 8,
+    },
+    bloomLabel: {
+      flex: 1,
+      fontSize: 14,
+      fontWeight: '500',
+      color: c.text,
+    },
+    bloomScore: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: c.text,
+    },
+    bloomBar: {
+      height: 6,
+      backgroundColor: c.borderLight,
+      borderRadius: 3,
+      overflow: 'hidden',
+    },
+    bloomBarFill: {
+      height: 6,
+      borderRadius: 3,
+    },
 
-  // ── Result Actions ──────────────────
-  resultActions: {
-    gap: 12,
-  },
-  reviewButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 16,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: '#1E3A8A',
-    gap: 10,
-  },
-  reviewButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1E3A8A',
-  },
-  retryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#1E3A8A',
-    paddingVertical: 16,
-    borderRadius: 16,
-    gap: 10,
-    shadowColor: '#1E3A8A',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  retryButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-});
+    // ── Result Actions ──────────────────
+    resultActions: {
+      gap: 12,
+    },
+    reviewButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: c.surface,
+      paddingVertical: 16,
+      borderRadius: 16,
+      borderWidth: 2,
+      borderColor: c.primary,
+      gap: 10,
+    },
+    reviewButtonText: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: c.primary,
+    },
+    retryButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: c.primary,
+      paddingVertical: 16,
+      borderRadius: 16,
+      gap: 10,
+      shadowColor: '#1E3A8A',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.3,
+      shadowRadius: 12,
+      elevation: 6,
+    },
+    retryButtonText: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: '#FFFFFF',
+    },
+  });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -16,9 +16,12 @@ import { Document, DocumentError } from '../../src/types/document';
 import { documentService } from '../../src/services/document.service';
 import DocumentCard from '../../components/DocumentCard';
 import { supabase } from '../../src/lib/supabase';
+import { useAppTheme, type AppColors } from '../../src/context/ThemeContext';
 
 export default function DocumentsScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -69,6 +72,34 @@ export default function DocumentsScreen() {
   };
 
   const handleSelectFile = async () => {
+    if (Platform.OS === 'web') {
+      // Web fallback
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.pdf,.doc,.docx,.txt,.png,.jpg,.jpeg';
+
+      input.onchange = (e: Event) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (!file) return;
+
+        if (file.size > 20 * 1024 * 1024) {
+          Alert.alert('File Too Large', 'Maximum file size is 20MB');
+          return;
+        }
+
+        setSelectedFile({
+          uri: URL.createObjectURL(file),
+          name: file.name,
+          type: file.type || 'application/octet-stream',
+          size: file.size,
+        });
+      };
+
+      input.click();
+      return; // 👈 stops here on web, doesn't touch DocumentPicker
+    }
+
+    // ✅ Your existing mobile code stays exactly as is below
     try {
       const mimeTypes = getMimeTypeForFileType(selectedType || undefined);
 
@@ -83,7 +114,6 @@ export default function DocumentsScreen() {
 
       const file = result.assets[0];
 
-      // Check file size (max 20MB)
       if (file.size && file.size > 20 * 1024 * 1024) {
         Alert.alert('File Too Large', 'Maximum file size is 20MB');
         return;
@@ -252,7 +282,7 @@ export default function DocumentsScreen() {
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#1E3A8A" />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : documents.length === 0 ? (
         <View style={styles.emptyContainer}>
@@ -287,59 +317,60 @@ export default function DocumentsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  listHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingBottom: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  listHeaderTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  placeholder: {
-    width: 40,
-    height: 40,
-  },
-  listContent: {
-    padding: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#6B7280',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#9CA3AF',
-  },
-});
+const makeStyles = (c: AppColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: c.background,
+    },
+    backButton: {
+      width: 40,
+      height: 40,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    listHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingTop: Platform.OS === 'ios' ? 60 : 40,
+      paddingBottom: 16,
+      backgroundColor: c.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
+    },
+    listHeaderTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: c.text,
+    },
+    placeholder: {
+      width: 40,
+      height: 40,
+    },
+    listContent: {
+      padding: 16,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 40,
+    },
+    emptyText: {
+      fontSize: 16,
+      color: c.textSecondary,
+      marginTop: 16,
+      marginBottom: 8,
+    },
+    emptySubtext: {
+      fontSize: 14,
+      color: c.textTertiary,
+    },
+  });

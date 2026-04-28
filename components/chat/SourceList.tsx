@@ -1,30 +1,41 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useAppTheme, type AppColors } from '../../src/context/ThemeContext';
 
 interface SourceListProps {
   sources: string[];
 }
 
-const SourceList: React.FC<SourceListProps> = ({ sources }) => (
-  <View style={styles.container}>
-    <Text style={styles.label}>Sources</Text>
-    {sources.map((source, index) => (
-      <Text key={index} style={styles.chip}>
-        📄 {source}
-      </Text>
-    ))}
-  </View>
-);
+const SourceList: React.FC<SourceListProps> = ({ sources }) => {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  return (
+    <View style={styles.container}>
+      <Text style={styles.label}>Sources</Text>
+      {sources.map((source, index) => (
+        <Text key={index} style={styles.chip}>
+          📄 {source}
+        </Text>
+      ))}
+    </View>
+  );
+};
 
-const styles = StyleSheet.create({
-  container: {
-    marginTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    paddingTop: 6,
-  },
-  label: { fontSize: 11, color: '#6B7280', marginBottom: 4, fontWeight: '600' },
-  chip: { fontSize: 11, color: '#4F46E5', marginBottom: 2 },
-});
+const makeStyles = (c: AppColors) =>
+  StyleSheet.create({
+    container: {
+      marginTop: 8,
+      borderTopWidth: 1,
+      borderTopColor: c.border,
+      paddingTop: 6,
+    },
+    label: {
+      fontSize: 11,
+      color: c.textSecondary,
+      marginBottom: 4,
+      fontWeight: '600',
+    },
+    chip: { fontSize: 11, color: c.primary, marginBottom: 2 },
+  });
 
 export default SourceList;

@@ -1,0 +1,33 @@
+import api from './api';
+import type {
+  Flashcard,
+  GenerateFlashcardsPayload,
+  GenerateFlashcardsResponse,
+  GetFlashcardsResponse,
+} from '../types/flashcard.type';
+
+export const generateFlashcards = async (
+  payload: GenerateFlashcardsPayload,
+): Promise<Flashcard[]> => {
+  const { data } = await api.post<GenerateFlashcardsResponse>(
+    '/flashcards/generate',
+    payload,
+  );
+  return data.flashcards;
+};
+
+export const getFlashcardsByDocument = async (
+  documentId: string,
+): Promise<Flashcard[]> => {
+  const { data } = await api.get<GetFlashcardsResponse>(
+    `/flashcards/document/${documentId}`,
+  );
+  return data.flashcards;
+};
+
+export const getAllUserFlashcards = async (
+  userId: string,
+): Promise<Flashcard[]> => {
+  const { data } = await api.get<GetFlashcardsResponse>(`/flashcards/user/${userId}`);
+  return data.flashcards;
+};

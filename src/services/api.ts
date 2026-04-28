@@ -1,21 +1,15 @@
-console.log('DEBUG - API URL:', process.env.EXPO_PUBLIC_API_URL);
 import axios from 'axios';
 
 const api = axios.create({
   baseURL:
     (process.env.EXPO_PUBLIC_API_URL ?? 'http://192.168.1.32:3000') + '/api',
   timeout: 30000,
-  // headers: {
-  //   apikey: process.env.EXPO_PUBLIC_SUPABASE_SERVICE_ROLE_KEY ?? '',
-  // },
 });
 
 console.log('BASE URL:', api.defaults.baseURL);
 
 api.interceptors.request.use((config) => {
   if (config.data instanceof FormData) {
-    // DO NOT delete Content-Type on Android New Arch.
-    // Instead, let it be, or set it explicitly to multipart.
     config.headers['Content-Type'] = 'multipart/form-data';
   }
   return config;
@@ -27,10 +21,9 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    console.error('--- AXIOS DIAGNOSTICS ---');
-    console.error('Code:', error.code); // e.g., ERR_NETWORK, ECONNABORTED
+    console.error('Code:', error.code);
     console.error('Config URL:', error.config?.url);
-    console.error('Is Transferred:', error.request?._sent); // Did the bytes even leave the phone?
+    console.error('Is Transferred:', error.request?._sent);
 
     if (error.code === 'ERR_NETWORK') {
       console.error(

@@ -8,9 +8,9 @@ export interface Document {
   preview?: string;
 }
 
-export interface UploadResponse extends Document {
-  extractedTextLength: number;
-  preview: string;
+export interface UploadResponse {
+  message: string;
+  data: Document;
 }
 
 export class DocumentError extends Error {

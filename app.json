@@ -16,7 +16,6 @@
     "android": {
       "usesCleartextTraffic": true,
       "package": "com.pockettutor.app",
-      "usesCleartextTraffic": true,
       "intentFilters": [
         {
           "action": "VIEW",
@@ -39,6 +38,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-notifications",
       [
         "expo-splash-screen",
         {
@@ -53,6 +53,19 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "84239b0c-839e-4343-9f02-c42b2e5fc56c"
+      }
+    },
+    "owner": "killian781",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/84239b0c-839e-4343-9f02-c42b2e5fc56c"
     }
   }
 }

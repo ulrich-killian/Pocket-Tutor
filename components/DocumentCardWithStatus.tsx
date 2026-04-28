@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import StatusBadge, { DocumentStatus } from './StatusBadge';
 import { Document } from '../src/types/document';
+import { useAppTheme, type AppColors } from '../src/context/ThemeContext';
 
 export interface DocumentWithStatus extends Document {
   status?: DocumentStatus;
@@ -67,6 +68,8 @@ export default function DocumentCardWithStatus({
   const iconColor = getFileIconColor(fileName);
   const formattedDate = formatDate(document.created_at);
   const status = document.status || 'pending';
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const handleDelete = () => {
     Alert.alert(
@@ -177,77 +180,78 @@ export default function DocumentCardWithStatus({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  containerProcessing: {
-    backgroundColor: '#FAFAFA',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderStyle: 'dashed',
-  },
-  iconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-  },
-  iconContainerProcessing: {
-    backgroundColor: '#F3F4F6',
-  },
-  content: {
-    flex: 1,
-    marginRight: 10,
-  },
-  name: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 4,
-  },
-  nameProcessing: {
-    color: '#9CA3AF',
-  },
-  metadata: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  metadataText: {
-    fontSize: 12,
-    color: '#9CA3AF',
-  },
-  metadataDot: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    marginHorizontal: 6,
-  },
-  deleteButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: '#FEF2F2',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cancelButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
+const makeStyles = (c: AppColors) =>
+  StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: c.surface,
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 12,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    containerProcessing: {
+      backgroundColor: c.surfaceSecondary,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderStyle: 'dashed',
+    },
+    iconContainer: {
+      width: 50,
+      height: 50,
+      borderRadius: 12,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 14,
+    },
+    iconContainerProcessing: {
+      backgroundColor: c.surfaceSecondary,
+    },
+    content: {
+      flex: 1,
+      marginRight: 10,
+    },
+    name: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: c.text,
+      marginBottom: 4,
+    },
+    nameProcessing: {
+      color: c.textTertiary,
+    },
+    metadata: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 6,
+    },
+    metadataText: {
+      fontSize: 12,
+      color: c.textTertiary,
+    },
+    metadataDot: {
+      fontSize: 12,
+      color: c.textTertiary,
+      marginHorizontal: 6,
+    },
+    deleteButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 10,
+      backgroundColor: '#FEF2F2',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    cancelButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 10,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+  });

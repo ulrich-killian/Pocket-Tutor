@@ -1,11 +1,16 @@
 import { useEffect } from 'react';
 import * as Linking from 'expo-linking';
-import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import {
+  DefaultTheme,
+  DarkTheme,
+  ThemeProvider,
+} from '@react-navigation/native';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
 import { AuthProvider, useAuthState } from '../src/context/AuthContext';
+import { AppThemeProvider, useAppTheme } from '../src/context/ThemeContext';
 import { authService } from '../src/services/authService';
 
 function RootLayoutNav() {
@@ -68,10 +73,12 @@ function RootLayoutNav() {
     return () => subscription.remove();
   }, [initialized, isAuthenticated]);
 
+  const { isDark } = useAppTheme();
+
   return (
-    <ThemeProvider value={DefaultTheme}>
+    <ThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
       <AuthProvider>
-        <StatusBar style="dark" />
+        <StatusBar style={isDark ? 'light' : 'dark'} />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
           <Stack.Screen name="(auth)" />
@@ -84,5 +91,9 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-  return <RootLayoutNav />;
+  return (
+    <AppThemeProvider>
+      <RootLayoutNav />
+    </AppThemeProvider>
+  );
 }

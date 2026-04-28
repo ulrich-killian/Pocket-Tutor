@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
   Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useAppTheme, type AppColors } from '../context/ThemeContext';
+import { supabase } from '../lib';
 
 const { width } = Dimensions.get('window');
 
@@ -22,6 +24,8 @@ export default function OnboardingScreen({
   navigation,
 }: OnboardingScreenProps) {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   // State for all selections
   const [category, setCategory] = useState<string>('');
@@ -84,16 +88,26 @@ export default function OnboardingScreen({
     }
   };
 
-  const handleContinue = () => {
-    // Save onboarding data (you can integrate with your backend later)
-    console.log('Onboarding data:', {
-      category: category === 'Others' ? categoryOther : category,
+  const handleContinue = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    const { error } = await supabase.from('profiles').upsert({
+      id: user.id,
+      academic_system: category === 'Others' ? categoryOther : category,
       topic: topic === 'Others' ? topicOther : topic,
-      studyHours,
-      learningStyle,
+      study_hours: studyHours,
+      learning_style: learningStyle,
     });
 
-    // Navigate to dashboard
+    if (error) {
+      console.error('Failed to save profile:', error.message);
+      return;
+    }
+
     router.replace('/(protected)/dashboard');
   };
 
@@ -147,7 +161,7 @@ export default function OnboardingScreen({
             <TextInput
               style={styles.otherInput}
               placeholder="Enter your category"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.placeholder}
               value={categoryOther}
               onChangeText={setCategoryOther}
             />
@@ -182,7 +196,7 @@ export default function OnboardingScreen({
             <TextInput
               style={styles.otherInput}
               placeholder="Enter your topic"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.placeholder}
               value={topicOther}
               onChangeText={setTopicOther}
             />
@@ -274,219 +288,220 @@ export default function OnboardingScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    alignItems: 'center',
-    paddingTop: 60,
-    paddingHorizontal: 24,
-    paddingBottom: 20,
-    backgroundColor: '#1E3A8A',
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-  },
-  logoContainer: {
-    marginBottom: 16,
-  },
-  logoCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  logoText: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#1E3A8A',
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 8,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: '#93C5FD',
-    textAlign: 'center',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 20,
-  },
-  section: {
-    marginBottom: 28,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 16,
-  },
-  optionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  optionButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
-  },
-  optionButtonSelected: {
-    borderColor: '#1E3A8A',
-    backgroundColor: '#1E3A8A',
-  },
-  optionText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#4B5563',
-  },
-  optionTextSelected: {
-    color: '#FFFFFF',
-  },
-  otherInput: {
-    marginTop: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: '#1F2937',
-    backgroundColor: '#F9FAFB',
-  },
-  studyHoursContainer: {
-    gap: 12,
-  },
-  studyHourButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
-  },
-  studyHourButtonSelected: {
-    borderColor: '#1E3A8A',
-    backgroundColor: '#EFF6FF',
-  },
-  radioOuter: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-    borderColor: '#D1D5DB',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
-  radioInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#1E3A8A',
-  },
-  studyHourText: {
-    fontSize: 15,
-    color: '#4B5563',
-    fontWeight: '500',
-  },
-  studyHourTextSelected: {
-    color: '#1E3A8A',
-    fontWeight: '600',
-  },
-  learningStyleContainer: {
-    gap: 12,
-  },
-  learningStyleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
-  },
-  learningStyleButtonSelected: {
-    borderColor: '#1E3A8A',
-    backgroundColor: '#EFF6FF',
-  },
-  checkboxOuter: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: '#D1D5DB',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
-  checkmark: {
-    color: '#1E3A8A',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  learningStyleText: {
-    flex: 1,
-    fontSize: 15,
-    color: '#4B5563',
-    fontWeight: '500',
-    lineHeight: 22,
-  },
-  learningStyleTextSelected: {
-    color: '#1E3A8A',
-    fontWeight: '600',
-  },
-  buttonContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 24,
-    paddingBottom: 40,
-    paddingTop: 16,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-  },
-  continueButton: {
-    backgroundColor: '#1E3A8A',
-    borderRadius: 14,
-    paddingVertical: 18,
-    alignItems: 'center',
-    shadowColor: '#1E3A8A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  continueButtonDisabled: {
-    opacity: 0.5,
-  },
-  continueButtonText: {
-    color: '#FFFFFF',
-    fontSize: 17,
-    fontWeight: '600',
-  },
-});
+const makeStyles = (c: AppColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: c.background,
+    },
+    header: {
+      alignItems: 'center',
+      paddingTop: 60,
+      paddingHorizontal: 24,
+      paddingBottom: 20,
+      backgroundColor: c.headerBg,
+      borderBottomLeftRadius: 24,
+      borderBottomRightRadius: 24,
+    },
+    logoContainer: {
+      marginBottom: 16,
+    },
+    logoCircle: {
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      backgroundColor: c.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      elevation: 6,
+    },
+    logoText: {
+      fontSize: 24,
+      fontWeight: '800',
+      color: c.primary,
+    },
+    headerTitle: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: '#FFFFFF',
+      marginBottom: 8,
+    },
+    headerSubtitle: {
+      fontSize: 14,
+      color: '#93C5FD',
+      textAlign: 'center',
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingHorizontal: 24,
+      paddingTop: 24,
+      paddingBottom: 20,
+    },
+    section: {
+      marginBottom: 28,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: c.text,
+      marginBottom: 16,
+    },
+    optionsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 10,
+    },
+    optionButton: {
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+      borderRadius: 12,
+      borderWidth: 2,
+      borderColor: c.border,
+      backgroundColor: c.surface,
+    },
+    optionButtonSelected: {
+      borderColor: c.primary,
+      backgroundColor: c.primary,
+    },
+    optionText: {
+      fontSize: 14,
+      fontWeight: '500',
+      color: c.textSecondary,
+    },
+    optionTextSelected: {
+      color: '#FFFFFF',
+    },
+    otherInput: {
+      marginTop: 12,
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      fontSize: 16,
+      color: c.inputText,
+      backgroundColor: c.inputBg,
+    },
+    studyHoursContainer: {
+      gap: 12,
+    },
+    studyHourButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      borderRadius: 12,
+      borderWidth: 2,
+      borderColor: c.border,
+      backgroundColor: c.surface,
+    },
+    studyHourButtonSelected: {
+      borderColor: c.primary,
+      backgroundColor: c.primaryLight,
+    },
+    radioOuter: {
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      borderWidth: 2,
+      borderColor: c.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 14,
+    },
+    radioInner: {
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      backgroundColor: c.primary,
+    },
+    studyHourText: {
+      fontSize: 15,
+      color: c.textSecondary,
+      fontWeight: '500',
+    },
+    studyHourTextSelected: {
+      color: c.primary,
+      fontWeight: '600',
+    },
+    learningStyleContainer: {
+      gap: 12,
+    },
+    learningStyleButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      borderRadius: 12,
+      borderWidth: 2,
+      borderColor: c.border,
+      backgroundColor: c.surface,
+    },
+    learningStyleButtonSelected: {
+      borderColor: c.primary,
+      backgroundColor: c.primaryLight,
+    },
+    checkboxOuter: {
+      width: 22,
+      height: 22,
+      borderRadius: 6,
+      borderWidth: 2,
+      borderColor: c.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 14,
+    },
+    checkmark: {
+      color: c.primary,
+      fontSize: 14,
+      fontWeight: 'bold',
+    },
+    learningStyleText: {
+      flex: 1,
+      fontSize: 15,
+      color: c.textSecondary,
+      fontWeight: '500',
+      lineHeight: 22,
+    },
+    learningStyleTextSelected: {
+      color: c.primary,
+      fontWeight: '600',
+    },
+    buttonContainer: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      paddingHorizontal: 24,
+      paddingBottom: 40,
+      paddingTop: 16,
+      backgroundColor: c.surface,
+      borderTopWidth: 1,
+      borderTopColor: c.border,
+    },
+    continueButton: {
+      backgroundColor: c.primary,
+      borderRadius: 14,
+      paddingVertical: 18,
+      alignItems: 'center',
+      shadowColor: c.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    continueButtonDisabled: {
+      opacity: 0.5,
+    },
+    continueButtonText: {
+      color: '#FFFFFF',
+      fontSize: 17,
+      fontWeight: '600',
+    },
+  });

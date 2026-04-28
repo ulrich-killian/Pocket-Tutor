@@ -1,0 +1,257 @@
+import React, { useMemo } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import StatusBadge, { DocumentStatus } from './StatusBadge';
+import { Document } from '../src/types/document';
+import { useAppTheme, type AppColors } from '../src/context/ThemeContext';
+
+export interface DocumentWithStatus extends Document {
+  status?: DocumentStatus;
+}
+
+interface DocumentCardWithStatusProps {
+  document: DocumentWithStatus;
+  onDelete: (document: DocumentWithStatus) => void;
+  onPress?: (document: DocumentWithStatus) => void;
+  onRetry?: (document: DocumentWithStatus) => void;
+}
+
+// Helper functions
+const getFileIcon = (fileName: string): string => {
+  const extension = fileName?.split('.').pop()?.toLowerCase() || '';
+  switch (extension) {
+    case 'pdf':
+      return 'document-text';
+    case 'doc':
+    case 'docx':
+      return 'document';
+    case 'txt':
+      return 'document-text-outline';
+    default:
+      return 'document-outline';
+  }
+};
+
+const getFileIconColor = (fileName: string): string => {
+  const extension = fileName?.split('.').pop()?.toLowerCase() || '';
+  switch (extension) {
+    case 'pdf':
+      return '#EF4444';
+    case 'doc':
+    case 'docx':
+      return '#3B82F6';
+    case 'txt':
+      return '#10B981';
+    default:
+      return '#6B7280';
+  }
+};
+
+const formatDate = (dateString?: string): string => {
+  if (!dateString) return 'Unknown date';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+};
+
+export default function DocumentCardWithStatus({
+  document,
+  onDelete,
+  onPress,
+  onRetry,
+}: DocumentCardWithStatusProps) {
+  const fileName = document.title; // Use title from backend
+  const iconName = getFileIcon(fileName) as keyof typeof Ionicons.glyphMap;
+  const iconColor = getFileIconColor(fileName);
+  const formattedDate = formatDate(document.created_at);
+  const status = document.status || 'pending';
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete Document',
+      `Are you sure you want to delete "${fileName}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => onDelete(document),
+        },
+      ],
+    );
+  };
+
+  const handlePress = () => {
+    if (status === 'error' && onRetry) {
+      Alert.alert(
+        'Processing Error',
+        'Would you like to retry processing this document?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Retry', onPress: () => onRetry(document) },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: () => onDelete(document),
+          },
+        ],
+      );
+      return;
+    }
+
+    if (status === 'processing' || status === 'uploading') {
+      Alert.alert(
+        'Please Wait',
+        "This document is still being processed. Please wait until it's ready.",
+      );
+      return;
+    }
+
+    if (onPress) {
+      onPress(document);
+    }
+  };
+
+  const isProcessing = status === 'uploading' || status === 'processing';
+
+  return (
+    <TouchableOpacity
+      style={[styles.container, isProcessing && styles.containerProcessing]}
+      onPress={handlePress}
+      activeOpacity={0.7}
+    >
+      <View
+        style={[
+          styles.iconContainer,
+          { backgroundColor: iconColor + '15' },
+          isProcessing && styles.iconContainerProcessing,
+        ]}
+      >
+        <Ionicons
+          name={iconName}
+          size={24}
+          color={isProcessing ? '#9CA3AF' : iconColor}
+        />
+      </View>
+
+      <View style={styles.content}>
+        <Text
+          style={[styles.name, isProcessing && styles.nameProcessing]}
+          numberOfLines={1}
+          ellipsizeMode="middle"
+        >
+          {fileName}
+        </Text>
+        <View style={styles.metadata}>
+          <Text style={styles.metadataText}>{formattedDate}</Text>
+        </View>
+
+        {/* Status Badge */}
+        <StatusBadge status={status} size="small" showLabel={true} />
+      </View>
+
+      {/* Only show delete button when not processing */}
+      {!isProcessing && (
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={handleDelete}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="trash-outline" size={20} color="#EF4444" />
+        </TouchableOpacity>
+      )}
+
+      {/* Show cancel button when processing */}
+      {isProcessing && (
+        <TouchableOpacity
+          style={styles.cancelButton}
+          onPress={handleDelete}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="close-circle" size={24} color="#9CA3AF" />
+        </TouchableOpacity>
+      )}
+    </TouchableOpacity>
+  );
+}
+
+const makeStyles = (c: AppColors) =>
+  StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: c.surface,
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 12,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    containerProcessing: {
+      backgroundColor: c.surfaceSecondary,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderStyle: 'dashed',
+    },
+    iconContainer: {
+      width: 50,
+      height: 50,
+      borderRadius: 12,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 14,
+    },
+    iconContainerProcessing: {
+      backgroundColor: c.surfaceSecondary,
+    },
+    content: {
+      flex: 1,
+      marginRight: 10,
+    },
+    name: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: c.text,
+      marginBottom: 4,
+    },
+    nameProcessing: {
+      color: c.textTertiary,
+    },
+    metadata: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 6,
+    },
+    metadataText: {
+      fontSize: 12,
+      color: c.textTertiary,
+    },
+    metadataDot: {
+      fontSize: 12,
+      color: c.textTertiary,
+      marginHorizontal: 6,
+    },
+    deleteButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 10,
+      backgroundColor: '#FEF2F2',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    cancelButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 10,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+  });

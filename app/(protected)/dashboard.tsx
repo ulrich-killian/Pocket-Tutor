@@ -13,7 +13,9 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/hooks/useAuth';
 import { useAppTheme, type AppColors } from '../../src/context/ThemeContext';
-import chatSessionService, { ChatSession } from '../../src/services/chat-session.service';
+import chatSessionService, {
+  ChatSession,
+} from '../../src/services/chat-session.service';
 
 const { width } = Dimensions.get('window');
 
@@ -335,7 +337,7 @@ export default function Dashboard() {
               <Text style={styles.seeAllText}>See All</Text>
             </TouchableOpacity>
           </View>
-<View style={styles.activityCard}>
+          <View style={styles.activityCard}>
             {loadingSessions ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="small" color={colors.primary} />
@@ -377,7 +379,7 @@ export default function Dashboard() {
                   )}
                 </TouchableOpacity>
               ))
-)}
+            )}
           </View>
         </View>
 

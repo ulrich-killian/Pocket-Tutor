@@ -90,18 +90,22 @@ export default function ChatScreen(): React.JSX.Element {
   const handleSend = async (text: string, image?: string): Promise<void> => {
     if (!text.trim() && !image) return;
     await send(text, image);
-    
+
     if (sessionId && userId) {
       chatSessionService.addMessage(sessionId, 'user', text).catch(() => {});
       setTimeout(() => {
         const lastMessage = messages[messages.length - 1];
         if (lastMessage?.role === 'assistant') {
-          chatSessionService.addMessage(sessionId, 'assistant', lastMessage.content).catch(() => {});
-          chatSessionService.updateSession(sessionId, lastMessage.content, messages.length + 1).catch(() => {});
+          chatSessionService
+            .addMessage(sessionId, 'assistant', lastMessage.content)
+            .catch(() => {});
+          chatSessionService
+            .updateSession(sessionId, lastMessage.content, messages.length + 1)
+            .catch(() => {});
         }
       }, 500);
     }
-    
+
     setTimeout(() => {
       listRef.current?.scrollToEnd({ animated: true });
     }, 100);

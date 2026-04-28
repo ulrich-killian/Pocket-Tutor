@@ -41,15 +41,29 @@ export const chatSessionService = {
     return response.data.session;
   },
 
-  addMessage: async (sessionId: string, role: string, content: string): Promise<void> => {
+  addMessage: async (
+    sessionId: string,
+    role: string,
+    content: string,
+  ): Promise<void> => {
     await api.post(`/chat-sessions/${sessionId}/messages`, { role, content });
   },
 
-  updateSession: async (sessionId: string, lastMessage: string, messageCount: number): Promise<void> => {
-    await api.patch(`/chat-sessions/${sessionId}`, { lastMessage, messageCount });
+  updateSession: async (
+    sessionId: string,
+    lastMessage: string,
+    messageCount: number,
+  ): Promise<void> => {
+    await api.patch(`/chat-sessions/${sessionId}`, {
+      lastMessage,
+      messageCount,
+    });
   },
 
-  deleteSession: async (sessionId: string, userId: string): Promise<boolean> => {
+  deleteSession: async (
+    sessionId: string,
+    userId: string,
+  ): Promise<boolean> => {
     const response = await api.delete(`/chat-sessions/${sessionId}`, {
       data: { userId },
     });

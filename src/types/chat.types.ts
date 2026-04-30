@@ -16,11 +16,12 @@ export interface ChatMessage {
 }
 
 export interface SendMessagePayload {
-  history: any;
   message: string;
   documentId?: string;
   userId: string;
   image?: string;
+  sessionId?: string;
+  history?: { role: 'user' | 'assistant'; content: string }[];
 }
 
 export interface SendMessageResponse {

@@ -12,24 +12,32 @@ interface UseChatReturn {
   clearMessages: () => void;
 }
 
-export const useChat = (userId: string, documentId?: string): UseChatReturn => {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+export const useChat = (
+  userId: string,
+  documentId?: string,
+  sessionId?: string,
+  initialMessages: ChatMessage[] = [],
+): UseChatReturn => {
+  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const initialLoadDone = useRef(false);
 
-  // Trigger initial welcome message for new conversations
+  useEffect(() => {
+    if (initialMessages.length > 0) {
+      setMessages(initialMessages);
+    }
+  }, [initialMessages.length]);
+
   useEffect(() => {
     if (!initialLoadDone.current && !documentId && messages.length === 0) {
       initialLoadDone.current = true;
-      // Send empty greeting to trigger welcome message
-      send('').catch(() => {});
+      send('hello').catch(() => {});
     }
   }, [userId, documentId]);
 
   const send = useCallback(
     async (text: string, image?: string): Promise<void> => {
-      // Allow empty text only for initial welcome (no messages yet)
       if (!text.trim() && messages.length > 0) return;
 
       const userMessage: ChatMessage = {
@@ -37,7 +45,7 @@ export const useChat = (userId: string, documentId?: string): UseChatReturn => {
         role: 'user',
         content: text,
         timestamp: new Date(),
-        image: image,
+        image,
       };
 
       const currentMessages = [...messages, userMessage];
@@ -45,21 +53,22 @@ export const useChat = (userId: string, documentId?: string): UseChatReturn => {
       setLoading(true);
       setError(null);
 
-      try {
-        console.log(
-          '📨 Sending message with userId:',
-          userId,
-          'documentId:',
-          documentId,
-          'hasImage:',
-          !!image,
-        );
+      // Build history from current messages (exclude the one just added)
+      const history = messages
+        .filter((m) => m.content?.trim()) // skip empty greeting message
+        .map((m) => ({
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+        }));
 
+      try {
         const response = await sendMessage({
           message: text,
-          documentId: documentId,
-          userId: userId,
-          image: image,
+          documentId,
+          userId,
+          image,
+          sessionId, // ← PASS sessionId
+          history, // ← PASS history
         });
 
         if (!response || typeof response.answer !== 'string') {
@@ -84,7 +93,7 @@ export const useChat = (userId: string, documentId?: string): UseChatReturn => {
         setLoading(false);
       }
     },
-    [userId, documentId, messages],
+    [userId, documentId, sessionId, messages],
   );
 
   const clearError = useCallback((): void => setError(null), []);

@@ -256,8 +256,16 @@ export default function Dashboard() {
     return date.toLocaleDateString();
   }
 
-  const handleActivityPress = (route: string) => {
-    router.push(route as any);
+  const handleActivityPress = (activity: (typeof recentActivity)[0]) => {
+    if (activity.id && chatSessions.find((s) => s.id === activity.id)) {
+      // It's a chat session — navigate with proper params
+      router.push({
+        pathname: '/(protected)/chat',
+        params: { sessionId: activity.id },
+      } as any);
+    } else {
+      router.push(activity.route as any);
+    }
   };
 
   return (
@@ -333,7 +341,9 @@ export default function Dashboard() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent Activity</Text>
-            <TouchableOpacity onPress={() => router.push('/documents')}>
+            <TouchableOpacity
+              onPress={() => router.push('/(protected)/sessions' as any)}
+            >
               <Text style={styles.seeAllText}>See All</Text>
             </TouchableOpacity>
           </View>
@@ -350,7 +360,7 @@ export default function Dashboard() {
               recentActivity.map((activity, index) => (
                 <TouchableOpacity
                   key={activity.id}
-                  onPress={() => handleActivityPress(activity.route)}
+                  onPress={() => handleActivityPress(activity)}
                   activeOpacity={0.7}
                 >
                   <View style={styles.activityItem}>

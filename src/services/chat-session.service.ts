@@ -36,6 +36,20 @@ export const chatSessionService = {
     return response.data.sessions;
   },
 
+  getSessionMessages: async (
+    sessionId: string,
+  ): Promise<
+    {
+      id: string;
+      role: string;
+      content: string;
+      createdAt: string;
+    }[]
+  > => {
+    const response = await api.get(`/chat-sessions/${sessionId}/messages`);
+    return response.data.messages;
+  },
+
   getSession: async (sessionId: string): Promise<ChatSession> => {
     const response = await api.get(`/chat-sessions/${sessionId}`);
     return response.data.session;

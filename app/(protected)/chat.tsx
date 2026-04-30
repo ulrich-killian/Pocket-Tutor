@@ -1,4 +1,11 @@
-import React, { useRef, useEffect, useMemo, useState as UseState } from 'react';
+import React, {
+  useRef,
+  useEffect,
+  useMemo,
+  useState as UseState,
+  useState,
+} from 'react';
+
 import {
   View,
   FlatList,
@@ -11,6 +18,8 @@ import {
   StatusBar,
   Keyboard,
   Alert,
+  Pressable,
+  Modal,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
@@ -24,8 +33,8 @@ import AIThinking from '../../components/chat/AIThinking';
 import type { ChatMessage } from '../../src/types/chat.types';
 import { useAppTheme, type AppColors } from '../../src/context/ThemeContext';
 import { documentService } from '../../src/services/document.service';
-import syllabusService from '../../src/services/syllabus.service';
-import chatSessionService from '../../src/services/chat-session.service';
+import { syllabusService } from '../../src/services/syllabus.service';
+import { chatSessionService } from '../../src/services/chat-session.service';
 
 export default function ChatScreen(): React.JSX.Element {
   const router = useRouter();
@@ -38,12 +47,35 @@ export default function ChatScreen(): React.JSX.Element {
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const userId = user?.id;
   const listRef = useRef<FlatList<ChatMessage>>(null);
+  const [activeSessionId, setActiveSessionId] = useState<string | undefined>(
+    sessionId, // reuse if passed via route params
+  );
+  const [loadedMessages, setLoadedMessages] = useState<ChatMessage[]>([]);
+
+  const [menuVisible, setMenuVisible] = UseState(false);
 
   // Fetch user syllabus context
   const [syllabusContext, setSyllabusContext] = UseState<{
     educationLevel?: { name: string };
     stream?: { name: string; subjects?: { name: string }[] };
   } | null>(null);
+
+  useEffect(() => {
+    if (!sessionId || !userId) return;
+
+    chatSessionService
+      .getSessionMessages(sessionId)
+      .then((msgs) => {
+        const mapped: ChatMessage[] = msgs.map((m: any) => ({
+          id: m.id,
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+          timestamp: new Date(m.createdAt),
+        }));
+        setLoadedMessages(mapped);
+      })
+      .catch(() => {});
+  }, [sessionId, userId]);
 
   useEffect(() => {
     if (userId && isFreeChat) {
@@ -85,26 +117,31 @@ export default function ChatScreen(): React.JSX.Element {
   }
 
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  const { messages, send, loading, error } = useChat(userId, documentId);
+  const { messages, send, loading, error } = useChat(
+    userId,
+    documentId,
+    activeSessionId,
+    loadedMessages,
+  );
 
   const handleSend = async (text: string, image?: string): Promise<void> => {
     if (!text.trim() && !image) return;
     await send(text, image);
 
-    if (sessionId && userId) {
-      chatSessionService.addMessage(sessionId, 'user', text).catch(() => {});
-      setTimeout(() => {
-        const lastMessage = messages[messages.length - 1];
-        if (lastMessage?.role === 'assistant') {
-          chatSessionService
-            .addMessage(sessionId, 'assistant', lastMessage.content)
-            .catch(() => {});
-          chatSessionService
-            .updateSession(sessionId, lastMessage.content, messages.length + 1)
-            .catch(() => {});
-        }
-      }, 500);
-    }
+    // if (sessionId && userId) {
+    //   chatSessionService.addMessage(sessionId, 'user', text).catch(() => {});
+    //   setTimeout(() => {
+    //     const lastMessage = messages[messages.length - 1];
+    //     if (lastMessage?.role === 'assistant') {
+    //       chatSessionService
+    //         .addMessage(sessionId, 'assistant', lastMessage.content)
+    //         .catch(() => {});
+    //       chatSessionService
+    //         .updateSession(sessionId, lastMessage.content, messages.length + 1)
+    //         .catch(() => {});
+    //     }
+    //   }, 500);
+    // }
 
     setTimeout(() => {
       listRef.current?.scrollToEnd({ animated: true });
@@ -661,6 +698,3 @@ const makeStyles = (c: AppColors) =>
       marginHorizontal: 12,
     },
   });
-function uploadDocument(arg0: ImagePicker.ImagePickerAsset) {
-  throw new Error('Function not implemented.');
-}
